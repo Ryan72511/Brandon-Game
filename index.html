@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Brandon's Ball Machine</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #07070f;
+    cursor: none;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+<script>
+'use strict';
+
+/* ============================================================
+   Brandon's Ball Machine
+   ------------------------------------------------------------
+   One input: click (or tap). A glowing ball drops from where
+   you click, plinks down through pegs playing gentle pentatonic
+   chimes, and paints the screen with color as it bounces.
+   No score. No losing. No text. Just balls, light, music, paint.
+   ============================================================ */
+
+const canvas = document.getElementById('world');
+const ctx = canvas.getContext('2d');
+
+// Persistent paint layer — splats accumulate here and fade very slowly.
+const paint = document.createElement('canvas');
+const pctx = paint.getContext('2d');
+
+let W = 0, H = 0, DPR = 1;
+
+// ---------------- Tunables (all gentle on purpose) ----------------
+const GRAVITY        = 900;     // px/s^2
+const BALL_BOUNCE    = 0.62;    // restitution off pegs
+const WALL_BOUNCE    = 0.55;
+const AIR_DRAG       = 0.999;
+const MAX_BALLS      = 140;     // oldest balls melt away gracefully
+const BALL_LIFE      = 45;      // seconds before a ball melts into paint
+const IDLE_DROP_SECS = 9;       // auto-drop a ball if he's just watching
+const SHOWER_CHANCE  = 0.12;    // some clicks release a rainbow shower
+const PAINT_FADE_SECS= 8;       // how often the painting breathes out a little
+
+// ---------------- State ----------------
+const balls = [];
+const pegs = [];
+const bumpers = [];
+const sparkles = [];
+const ripples = [];
+
+let hueBase = Math.random() * 360; // slowly drifting world color
+let lastInteraction = 0;
+let clickCount = 0;
+let mouseX = -100, mouseY = -100;
+let lastPaintFade = 0;
+
+// ---------------- Audio: soft pentatonic chimes ----------------
+// C major pentatonic across three octaves, high notes at the top of the
+// screen, low notes at the bottom — so every falling ball plays a tiny
+// descending melody. Pentatonic means no two notes ever clash.
+const SCALE = [1046.5, 880.0, 783.99, 659.25, 523.25,
+               440.0, 392.0, 329.63, 261.63, 220.0, 196.0, 164.81];
+let audioCtx = null;
+let masterGain = null;
+let lastChimeAt = 0;
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.22;
+    const soften = audioCtx.createBiquadFilter();
+    soften.type = 'lowpass';
+    soften.frequency.value = 2400;
+    masterGain.connect(soften);
+    soften.connect(audioCtx.destination);
+  } catch (e) { audioCtx = null; }
+}
+
+function chime(freq, vol, dur) {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  // Never let chimes pile into a wall of sound.
+  if (now - lastChimeAt < 0.025) return;
+  lastChimeAt = now;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(vol, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start(now);
+  osc.stop(now + dur + 0.05);
+}
+
+function chimeForHeight(y, vol) {
+  const idx = Math.min(SCALE.length - 1,
+    Math.max(0, Math.floor((y / H) * SCALE.length)));
+  chime(SCALE[idx], vol, 0.9);
+}
+
+// ---------------- Layout ----------------
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  // Keep the existing painting when the window changes size.
+  const keep = document.createElement('canvas');
+  keep.width = paint.width; keep.height = paint.height;
+  if (paint.width) keep.getContext('2d').drawImage(paint, 0, 0);
+  paint.width = W * DPR;
+  paint.height = H * DPR;
+  pctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (keep.width) pctx.drawImage(keep, 0, 0, keep.width / DPR, keep.height / DPR);
+
+  buildPegs();
+}
+
+function buildPegs() {
+  pegs.length = 0;
+  bumpers.length = 0;
+
+  // Staggered pachinko field through the middle of the screen,
+  // leaving open sky at the top and a pooling area at the bottom.
+  const top = H * 0.18, bottom = H * 0.80;
+  const cols = Math.max(6, Math.floor(W / 110));
+  const rows = Math.max(5, Math.floor((bottom - top) / 90));
+  const dx = W / cols, dy = (bottom - top) / rows;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c <= cols; c++) {
+      const x = c * dx + (r % 2 ? dx / 2 : 0);
+      if (x < 20 || x > W - 20) continue;
+      pegs.push({
+        x, y: top + r * dy + dy / 2,
+        r: 7,
+        glow: 0,                 // eases up on hit, fades smoothly
+        hue: (r * 23 + c * 11) % 360,
+      });
+    }
+  }
+
+  // Three big breathing bumpers — the pinball nod. They pulse slowly,
+  // boop balls away with a deeper tone, and ring with a ripple.
+  const by = top + (bottom - top) * 0.5;
+  [[0.2, by - dy], [0.5, by + dy * 1.2], [0.8, by - dy * 0.4]].forEach(([fx, y], i) => {
+    // Clear regular pegs that would overlap the bumper.
+    const bx = W * fx, br = 34;
+    for (let p = pegs.length - 1; p >= 0; p--) {
+      const d = Math.hypot(pegs[p].x - bx, pegs[p].y - y);
+      if (d < br + 26) pegs.splice(p, 1);
+    }
+    bumpers.push({ x: bx, y, baseR: br, r: br, glow: 0, phase: i * 2.1, hue: i * 120 });
+  });
+}
+
+// ---------------- Balls ----------------
+function spawnBall(x, y, opts = {}) {
+  if (balls.length >= MAX_BALLS) {
+    // Gracefully melt the oldest ball instead of hard-deleting it.
+    const oldest = balls[0];
+    if (!oldest.melting) startMelt(oldest);
+  }
+  const r = opts.r || (9 + Math.random() * 9);
+  balls.push({
+    x, y,
+    vx: opts.vx !== undefined ? opts.vx : (Math.random() - 0.5) * 60,
+    vy: opts.vy !== undefined ? opts.vy : 0,
+    r,
+    hue: opts.hue !== undefined ? opts.hue : (hueBase + Math.random() * 80) % 360,
+    born: timeNow,
+    melting: false,
+    meltT: 0,
+    restTime: 0,
+    trail: [],
+  });
+}
+
+function startMelt(b) {
+  b.melting = true;
+  b.meltT = 0;
+}
+
+function dropAt(x, y) {
+  initAudio();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  lastInteraction = timeNow;
+  clickCount++;
+
+  // A soft ring confirms every click immediately.
+  ripples.push({ x, y, r: 6, max: 70, life: 1, hue: hueBase % 360 });
+
+  if (Math.random() < SHOWER_CHANCE || clickCount % 9 === 0) {
+    // Rainbow shower: a fan of small balls, each its own color.
+    const n = 9 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI / 2 + (i / (n - 1) - 0.5) * 1.6;
+      spawnBall(x, Math.min(y, H * 0.3), {
+        vx: Math.cos(a) * 180,
+        vy: Math.sin(a) * 120,
+        r: 6 + Math.random() * 5,
+        hue: (i / n) * 360,
+      });
+    }
+    chime(SCALE[0] / 2, 0.25, 1.4);
+  } else {
+    spawnBall(x, y);
+    chimeForHeight(y, 0.18);
+  }
+}
+
+// ---------------- Paint splats ----------------
+function splat(x, y, hue, size, alpha) {
+  const g = pctx.createRadialGradient(x, y, 0, x, y, size);
+  g.addColorStop(0, `hsla(${hue}, 85%, 60%, ${alpha})`);
+  g.addColorStop(1, `hsla(${hue}, 85%, 60%, 0)`);
+  pctx.fillStyle = g;
+  pctx.beginPath();
+  pctx.arc(x, y, size, 0, Math.PI * 2);
+  pctx.fill();
+  // A few little flecks make it feel like real paint.
+  for (let i = 0; i < 3; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const d = size * (0.6 + Math.random() * 0.9);
+    pctx.fillStyle = `hsla(${hue}, 90%, 65%, ${alpha * 0.8})`;
+    pctx.beginPath();
+    pctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, 1.5 + Math.random() * 2.5, 0, Math.PI * 2);
+    pctx.fill();
+  }
+}
+
+function burst(x, y, hue, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 40 + Math.random() * 160;
+    sparkles.push({
+      x, y,
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s - 60,
+      life: 1,
+      hue: (hue + Math.random() * 40 - 20 + 360) % 360,
+      r: 1.5 + Math.random() * 2.5,
+    });
+  }
+}
+
+// ---------------- Physics ----------------
+function stepBall(b, dt) {
+  if (b.melting) {
+    b.meltT += dt;
+    if (b.meltT >= 1) {
+      splat(b.x, b.y, b.hue, b.r * 2.2, 0.5);
+      burst(b.x, b.y, b.hue, 10);
+      chimeForHeight(b.y, 0.08);
+      balls.splice(balls.indexOf(b), 1);
+    }
+    return;
+  }
+
+  b.vy += GRAVITY * dt;
+  b.vx *= AIR_DRAG;
+  b.x += b.vx * dt;
+  b.y += b.vy * dt;
+
+  // Walls
+  if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * WALL_BOUNCE; }
+  if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx) * WALL_BOUNCE; }
+  if (b.y < b.r) { b.y = b.r; b.vy = Math.abs(b.vy) * WALL_BOUNCE; }
+
+  // Floor
+  if (b.y > H - b.r) {
+    const impact = b.vy;
+    b.y = H - b.r;
+    b.vy = -Math.abs(b.vy) * WALL_BOUNCE;
+    b.vx *= 0.92;
+    if (impact > 140) {
+      splat(b.x, H - 3, b.hue, b.r * (1 + impact / 600), 0.35);
+      chimeForHeight(H, Math.min(0.14, impact / 4000));
+    }
+    if (Math.abs(b.vy) < 30) b.vy = 0;
+  }
+
+  // Pegs
+  for (const p of pegs) {
+    const dx = b.x - p.x, dy = b.y - p.y;
+    const dist = Math.hypot(dx, dy), min = b.r + p.r;
+    if (dist < min && dist > 0.001) {
+      const nx = dx / dist, ny = dy / dist;
+      b.x = p.x + nx * min;
+      b.y = p.y + ny * min;
+      const dot = b.vx * nx + b.vy * ny;
+      if (dot < 0) {
+        b.vx -= (1 + BALL_BOUNCE) * dot * nx;
+        b.vy -= (1 + BALL_BOUNCE) * dot * ny;
+        const speed = Math.hypot(b.vx, b.vy);
+        if (speed > 90) {
+          p.glow = 1;
+          splat(b.x, b.y, b.hue, 4 + speed / 60, 0.30);
+          chimeForHeight(p.y, Math.min(0.16, speed / 5000));
+        }
+      }
+    }
+  }
+
+  // Bumpers: stronger, springier, deeper voice.
+  for (const bp of bumpers) {
+    const dx = b.x - bp.x, dy = b.y - bp.y;
+    const dist = Math.hypot(dx, dy), min = b.r + bp.r;
+    if (dist < min && dist > 0.001) {
+      const nx = dx / dist, ny = dy / dist;
+      b.x = bp.x + nx * min;
+      b.y = bp.y + ny * min;
+      const dot = b.vx * nx + b.vy * ny;
+      if (dot < 0) {
+        b.vx -= 2.1 * dot * nx;
+        b.vy -= 2.1 * dot * ny;
+        bp.glow = 1;
+        ripples.push({ x: bp.x, y: bp.y, r: bp.r, max: bp.r + 60, life: 1, hue: bp.hue });
+        splat(b.x, b.y, b.hue, 10, 0.35);
+        chime(SCALE[Math.min(SCALE.length - 1, 8 + (bumpers.indexOf(bp) % 3))] / 2, 0.2, 1.2);
+      }
+    }
+  }
+
+  // Ball-on-ball: soft pushes so they pool and jostle at the bottom.
+  for (const o of balls) {
+    if (o === b || o.melting) continue;
+    const dx = b.x - o.x, dy = b.y - o.y;
+    const dist = Math.hypot(dx, dy), min = b.r + o.r;
+    if (dist < min && dist > 0.001) {
+      const nx = dx / dist, ny = dy / dist;
+      const push = (min - dist) / 2;
+      b.x += nx * push; b.y += ny * push;
+      o.x -= nx * push; o.y -= ny * push;
+      const rvx = b.vx - o.vx, rvy = b.vy - o.vy;
+      const dot = rvx * nx + rvy * ny;
+      if (dot < 0) {
+        const j = -(1 + 0.4) * dot / 2;
+        b.vx += j * nx; b.vy += j * ny;
+        o.vx -= j * nx; o.vy -= j * ny;
+      }
+    }
+  }
+
+  // Resting or elderly balls melt into the painting.
+  const slow = Math.hypot(b.vx, b.vy) < 25 && b.y > H * 0.75;
+  b.restTime = slow ? b.restTime + dt : 0;
+  if (b.restTime > 6 || timeNow - b.born > BALL_LIFE) startMelt(b);
+
+  // Short comet trail.
+  b.trail.push({ x: b.x, y: b.y });
+  if (b.trail.length > 7) b.trail.shift();
+}
+
+// ---------------- Drawing ----------------
+function draw(dt) {
+  // Deep, slowly hue-shifting night background.
+  hueBase = (hueBase + dt * 1.5) % 360;
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, `hsl(${(hueBase + 220) % 360}, 45%, 6%)`);
+  bg.addColorStop(1, `hsl(${(hueBase + 260) % 360}, 50%, 10%)`);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // The painting underneath everything.
+  ctx.drawImage(paint, 0, 0, W, H);
+
+  // Every few seconds the painting breathes out a tiny bit so there is
+  // always room for new color (fades over many minutes, not seconds).
+  if (timeNow - lastPaintFade > PAINT_FADE_SECS) {
+    lastPaintFade = timeNow;
+    pctx.save();
+    pctx.globalCompositeOperation = 'destination-out';
+    pctx.fillStyle = 'rgba(0,0,0,0.045)';
+    pctx.fillRect(0, 0, W, H);
+    pctx.restore();
+  }
+
+  // Pegs
+  for (const p of pegs) {
+    p.glow = Math.max(0, p.glow - dt * 1.8);
+    const lit = p.glow;
+    if (lit > 0.02) {
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 5);
+      g.addColorStop(0, `hsla(${p.hue}, 90%, 65%, ${0.5 * lit})`);
+      g.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = `hsl(${p.hue}, ${30 + lit * 60}%, ${30 + lit * 45}%)`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Bumpers breathe.
+  for (const bp of bumpers) {
+    bp.phase += dt * 0.8;
+    bp.r = bp.baseR + Math.sin(bp.phase) * 5;
+    bp.glow = Math.max(0, bp.glow - dt * 1.5);
+    const hue = (bp.hue + hueBase) % 360;
+    const g = ctx.createRadialGradient(bp.x, bp.y, 0, bp.x, bp.y, bp.r * 2.2);
+    g.addColorStop(0, `hsla(${hue}, 80%, ${45 + bp.glow * 30}%, 0.9)`);
+    g.addColorStop(0.6, `hsla(${hue}, 80%, 35%, 0.5)`);
+    g.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(bp.x, bp.y, bp.r * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `hsla(${hue}, 90%, 70%, ${0.5 + bp.glow * 0.5})`;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(bp.x, bp.y, bp.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Ripples
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const rp = ripples[i];
+    rp.life -= dt * 1.6;
+    rp.r += (rp.max - rp.r) * dt * 4;
+    if (rp.life <= 0) { ripples.splice(i, 1); continue; }
+    ctx.strokeStyle = `hsla(${rp.hue}, 85%, 65%, ${rp.life * 0.6})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Balls with comet trails and glow.
+  ctx.globalCompositeOperation = 'lighter';
+  for (const b of balls) {
+    const scale = b.melting ? Math.max(0, 1 - b.meltT) : 1;
+    const r = b.r * scale;
+    for (let i = 0; i < b.trail.length; i++) {
+      const t = b.trail[i];
+      const f = (i + 1) / b.trail.length;
+      ctx.fillStyle = `hsla(${b.hue}, 90%, 60%, ${f * 0.16 * scale})`;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, r * f * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, r * 2.4);
+    g.addColorStop(0, `hsla(${b.hue}, 95%, 72%, ${0.95 * scale})`);
+    g.addColorStop(0.45, `hsla(${b.hue}, 90%, 55%, ${0.55 * scale})`);
+    g.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, r * 2.4, 0, Math.PI * 2);
+    ctx.fill();
+    // A little highlight makes them feel like marbles.
+    ctx.fillStyle = `hsla(${b.hue}, 100%, 92%, ${0.85 * scale})`;
+    ctx.beginPath();
+    ctx.arc(b.x - r * 0.3, b.y - r * 0.35, r * 0.32, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Sparkles
+  for (let i = sparkles.length - 1; i >= 0; i--) {
+    const s = sparkles[i];
+    s.life -= dt * 1.4;
+    if (s.life <= 0) { sparkles.splice(i, 1); continue; }
+    s.vy += GRAVITY * 0.35 * dt;
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    ctx.fillStyle = `hsla(${s.hue}, 95%, 75%, ${s.life})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r * s.life, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+
+  // A soft glowing cursor so he always knows where his hand is.
+  if (mouseY >= 0) {
+    const g = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 26);
+    g.addColorStop(0, `hsla(${hueBase % 360}, 90%, 75%, 0.55)`);
+    g.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, 26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `hsla(${hueBase % 360}, 90%, 80%, 0.8)`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, 10, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+// ---------------- Main loop ----------------
+let timeNow = 0;
+let lastFrame = performance.now();
+
+function frame(t) {
+  const dt = Math.min(0.033, (t - lastFrame) / 1000);
+  lastFrame = t;
+  timeNow += dt;
+
+  // Several small physics substeps keep fast balls from tunneling pegs.
+  const sub = 3, sdt = dt / sub;
+  for (let s = 0; s < sub; s++) {
+    for (let i = balls.length - 1; i >= 0; i--) stepBall(balls[i], sdt);
+  }
+
+  // If he's just watching, keep the world alive with an occasional ball.
+  if (timeNow - lastInteraction > IDLE_DROP_SECS) {
+    lastInteraction = timeNow - IDLE_DROP_SECS + 3 + Math.random() * 4;
+    spawnBall(W * (0.1 + Math.random() * 0.8), 20);
+  }
+
+  draw(dt);
+  requestAnimationFrame(frame);
+}
+
+// ---------------- Input: just clicks ----------------
+function pointerPos(e) {
+  if (e.touches && e.touches.length) {
+    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+  return { x: e.clientX, y: e.clientY };
+}
+
+window.addEventListener('pointerdown', (e) => {
+  const p = pointerPos(e);
+  mouseX = p.x; mouseY = p.y;
+  dropAt(p.x, p.y);
+});
+window.addEventListener('pointermove', (e) => {
+  mouseX = e.clientX; mouseY = e.clientY;
+});
+window.addEventListener('contextmenu', (e) => e.preventDefault());
+window.addEventListener('resize', resize);
+
+resize();
+// A welcoming start: a few balls already falling when the page opens.
+for (let i = 0; i < 5; i++) {
+  spawnBall(W * (0.15 + 0.175 * i), -20 - i * 60, { hue: i * 72 });
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
