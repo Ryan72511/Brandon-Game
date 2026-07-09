@@ -154,7 +154,12 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 @media (max-width: 860px) {
   .topbar { flex-wrap: nowrap; gap: 10px; }
   .topbar .status-chip { display: none; }
-  .topnav { overflow-x: auto; scrollbar-width: none; }
+  .topnav {
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 26px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 26px), transparent 100%);
+    padding-right: 10px;
+  }
   .topnav::-webkit-scrollbar { display: none; }
   .timecode { font-size: 11px; }
 }
@@ -291,6 +296,11 @@ main { display: block; }
 }
 
 /* abstract CSS feeds */
+@property --spot-x {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 20%;
+}
 .feed-reality {
   background:
     radial-gradient(220px 220px at var(--spot-x, 20%) 40%, rgba(255,68,56,0.5), transparent 65%),
@@ -304,11 +314,19 @@ main { display: block; }
 }
 
 .feed-brand {
-  background: linear-gradient(115deg, #16191d 0%, #232830 35%, #2e3540 50%, #232830 65%, #16191d 100%);
-  background-size: 220% 100%;
+  background:
+    linear-gradient(to bottom, #05070a 0 14px, transparent 14px calc(100% - 14px), #05070a calc(100% - 14px) 100%),
+    linear-gradient(to bottom, transparent calc(50% - 1px), rgba(244,245,243,0.22) 50%, transparent calc(50% + 1px)),
+    linear-gradient(115deg, #1b2027 0%, #303845 38%, #46536a 50%, #303845 62%, #1b2027 100%);
+  background-size: 100% 100%, 220% 100%, 220% 100%;
 }
-.js .feed-brand { animation: pan-feed 9s ease-in-out infinite alternate; }
-@keyframes pan-feed { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+.js .feed-brand {
+  animation: pan-feed 9s ease-in-out infinite alternate;
+}
+@keyframes pan-feed {
+  from { background-position: 0 0, 0% 0, 0% 0; }
+  to { background-position: 0 0, 100% 0, 100% 0; }
+}
 
 .feed-ai { background: #0e1512; }
 .feed-ai svg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -412,12 +430,18 @@ main { display: block; }
 }
 
 .rundown-detail {
-  display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.28s ease;
+  display: grid; grid-template-rows: 0fr;
+  visibility: hidden;
+  transition: grid-template-rows 0.28s ease, visibility 0s 0.28s;
 }
 .rundown-detail > div { overflow: hidden; }
-.rundown-item.open .rundown-detail { grid-template-rows: 1fr; }
+.rundown-item.open .rundown-detail {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition: grid-template-rows 0.28s ease, visibility 0s 0s;
+}
 @media (prefers-reduced-motion: reduce) { .rundown-detail { transition: none; } }
-.no-js .rundown-detail { grid-template-rows: 1fr; }
+.no-js .rundown-detail { grid-template-rows: 1fr; visibility: visible; }
 
 .rundown-detail .detail-inner {
   padding: 6px 10px 28px;
@@ -547,6 +571,35 @@ main { display: block; }
   .js .signal-flow .wire.draw { stroke-dashoffset: 0; transition: none; }
 }
 
+/* stacked pipeline for small screens */
+.flow-stack, .flow-stack-rail { display: none; }
+@media (max-width: 680px) {
+  .signal-flow svg { display: none; }
+  .flow-stack {
+    display: block; list-style: none; margin: 0; padding: 0;
+  }
+  .flow-stack li {
+    border: 1px solid var(--line); background: var(--surface);
+    padding: 14px 16px; position: relative;
+  }
+  .flow-stack li.hot { border-color: var(--green); }
+  .flow-stack li + li { margin-top: 26px; }
+  .flow-stack li + li::before {
+    content: ""; position: absolute; left: 50%; top: -27px; height: 26px;
+    border-left: 2px dashed var(--green);
+  }
+  .flow-stack strong {
+    display: block; font-family: var(--mono); font-weight: 500;
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .flow-stack span {
+    display: block; margin-top: 3px; font-family: var(--mono);
+    font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--meta);
+  }
+  .flow-stack-rail { display: block; margin-top: 18px; color: var(--meta); }
+}
+
 /* status chips on AI rundown */
 .chip {
   display: inline-flex; align-items: center; gap: 7px;
@@ -651,6 +704,7 @@ main { display: block; }
   padding: 8px 14px; margin-bottom: 18px;
 }
 .print-chip:hover, .print-chip:focus-visible { border-color: var(--amber); color: var(--amber); }
+.no-js .print-chip { display: none; }
 
 /* ---------- playhead scroll bar ---------- */
 

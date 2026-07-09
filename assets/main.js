@@ -68,16 +68,26 @@
   }
 
   /* ---------- rundown expand/collapse ---------- */
-  document.querySelectorAll('.rundown-item').forEach(function (item) {
+  document.querySelectorAll('.rundown-item').forEach(function (item, i) {
     var btn = item.querySelector('.rundown-row');
     var detail = item.querySelector('.rundown-detail');
     if (!btn || !detail) return;
+    detail.id = detail.id || 'rundown-panel-' + (i + 1);
     btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-controls', detail.id);
     btn.addEventListener('click', function () {
       var open = item.classList.toggle('open');
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
   });
+
+  /* ---------- keep active nav link in view on narrow screens ---------- */
+  var activeLink = document.querySelector('.topnav a[aria-current="page"]');
+  var nav = document.querySelector('.topnav');
+  if (activeLink && nav && nav.scrollWidth > nav.clientWidth) {
+    var delta = activeLink.getBoundingClientRect().left - nav.getBoundingClientRect().left;
+    nav.scrollLeft += delta - (nav.clientWidth - activeLink.offsetWidth) / 2;
+  }
 
   /* ---------- "take" navigation: flash frame then hard cut ---------- */
   var flash = document.querySelector('.flash-frame');
