@@ -159,6 +159,7 @@ export default async function CreatorPage({
                   emoji={c.emoji}
                   category={c.category}
                   caption={`${c._count.videos} ${c._count.videos === 1 ? "video" : "videos"}`}
+                  onLight
                 />
               ))}
           </div>

@@ -36,7 +36,7 @@ export default function Sheet({
         onClick={onClose}
         tabIndex={-1}
       />
-      <div className="sheet-up absolute inset-x-0 bottom-0 mx-auto max-h-[80dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-surface p-4 pb-8 shadow-card">
+      <div className="sheet-up light-scope absolute inset-x-0 bottom-0 mx-auto max-h-[80dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-4 pb-8 shadow-card">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xl font-bold">{title}</h2>
           <button

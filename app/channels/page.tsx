@@ -60,7 +60,7 @@ export default async function ChannelsPage() {
         <h1 className="text-xl font-semibold text-night-ink">Channels</h1>
       </header>
 
-      <div className="px-4 pb-28">
+      <div className="px-4 pb-6">
         {/* Surprise Me billboard */}
         {surprise && (
           <Link

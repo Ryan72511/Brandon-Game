@@ -59,7 +59,7 @@ export default async function ChannelPage({
   const recs = await getFeedVideos(recIds, user?.id ?? null);
 
   return (
-    <div className="flex flex-col gap-5 pb-28">
+    <div className="flex flex-col gap-5 pb-6">
       <PageHeader title={channel.name} backHref="/channels" dark />
 
       <div className="flex flex-col gap-3 px-4">

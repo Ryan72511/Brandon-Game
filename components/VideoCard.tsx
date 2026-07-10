@@ -52,7 +52,7 @@ export default function VideoCard({
           {title}
         </span>
         <span className="mt-1 flex items-center gap-2">
-          <ScoreBadge score={score} size="sm" />
+          <ScoreBadge score={score} size="sm" dark={dark} />
           {creatorName && (
             <span
               className={`truncate text-[14px] ${dark ? "text-night-ink-soft" : "text-ink-soft"}`}

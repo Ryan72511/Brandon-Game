@@ -5,25 +5,28 @@ import type { ScoreDisplay } from "@/lib/score";
 export default function ScoreBadge({
   score,
   size = "md",
+  dark = false,
 }: {
   score: ScoreDisplay;
   size?: "sm" | "md";
+  dark?: boolean;
 }) {
   const base =
     size === "sm"
       ? "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-bold"
       : "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[15px] font-bold";
+  const muted = dark ? "bg-white/15 text-white" : "bg-line/60 text-ink-soft";
 
   if (score.kind === "new") {
     return (
-      <span className={`${base} bg-line/60 text-ink-soft`} title="Not enough ratings yet">
+      <span className={`${base} ${muted}`} title="Not enough ratings yet">
         🍿 Just popped
       </span>
     );
   }
   return (
     <span
-      className={`${base} ${score.fresh ? "bg-gold-soft text-ink" : "bg-line/60 text-ink-soft"}`}
+      className={`${base} ${score.fresh ? "bg-gold-soft text-ink" : muted}`}
       title={`${score.count} ratings`}
     >
       {score.fresh ? "🍿" : "🌽"} {score.score}% popped

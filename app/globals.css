@@ -127,9 +127,13 @@ input[type="range"].scrubber::-moz-range-thumb {
     linear-gradient(180deg, #1a1d33 0%, #12142a 30%, #0c0e1c 100%);
 }
 
-/* Blue focus rings vanish on the dark canvas — use white there. */
+/* Blue focus rings vanish on the dark canvas — use white there. Light
+   surfaces layered on top (sheets/dialogs) opt back into the accent ring. */
 .night-scope :focus-visible {
   outline-color: #ffffff;
+}
+.night-scope .light-scope :focus-visible {
+  outline-color: var(--color-accent);
 }
 
 /* Surprise Me's slowly breathing iridescent gradient. */
@@ -142,4 +146,13 @@ input[type="range"].scrubber::-moz-range-thumb {
   background-image: linear-gradient(120deg, #5b21b6, #be185d 45%, #7c3aed 80%, #5b21b6);
   background-size: 300% 300%;
   animation: hero-shift 9s ease-in-out infinite;
+}
+/* The global near-zero animation-duration would make an infinite loop
+   flicker — stop it outright and settle on a static gradient. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-iridescent {
+    animation: none !important;
+    background-image: linear-gradient(135deg, #5b21b6, #be185d);
+    background-size: auto;
+  }
 }

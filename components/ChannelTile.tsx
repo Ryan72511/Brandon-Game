@@ -10,6 +10,7 @@ export default function ChannelTile({
   category,
   caption,
   href,
+  onLight = false,
 }: {
   slug: string;
   name: string;
@@ -17,6 +18,9 @@ export default function ChannelTile({
   category: string;
   caption?: string;
   href?: string;
+  // Set when the tile sits on a light page (e.g. creator profiles) so the
+  // caption keeps readable contrast.
+  onLight?: boolean;
 }) {
   return (
     <Link
@@ -25,7 +29,11 @@ export default function ChannelTile({
     >
       <ChannelLogo slug={slug} category={category} name={name} emoji={emoji} variant="tile" />
       {caption && (
-        <span className="mt-1.5 block text-center text-[13px] font-medium text-[#8e94ab]">
+        <span
+          className={`mt-1.5 block text-center text-[13px] font-medium ${
+            onLight ? "text-ink-soft" : "text-night-meta"
+          }`}
+        >
           {caption}
         </span>
       )}

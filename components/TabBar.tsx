@@ -29,8 +29,14 @@ export default function TabBar({
   const pathname = usePathname();
   // The watch feed is immersive; the tab bar stays so people never get lost.
   const tabs = signedIn && mode === "creating" ? CREATING_TABS : WATCHING_TABS;
-  // The channel storefront routes run dark — the bar follows.
-  const dark = pathname.startsWith("/channels") || pathname.startsWith("/channel/");
+  // Dark bar on dark screens: the storefront routes and the watch feeds
+  // (home, /watch, /surprise all sit on a near-black canvas).
+  const dark =
+    pathname === "/" ||
+    pathname.startsWith("/watch") ||
+    pathname.startsWith("/surprise") ||
+    pathname.startsWith("/channels") ||
+    pathname.startsWith("/channel/");
 
   return (
     <nav
