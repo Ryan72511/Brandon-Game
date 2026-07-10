@@ -13,6 +13,7 @@ export default function VideoCard({
   creatorName,
   href,
   rank,
+  dark = false,
 }: {
   id: string;
   title: string;
@@ -22,11 +23,16 @@ export default function VideoCard({
   creatorName?: string;
   href?: string;
   rank?: number;
+  dark?: boolean;
 }) {
   return (
     <Link
       href={href ?? `/watch/${id}`}
-      className="block overflow-hidden rounded-xl border border-line bg-surface shadow-card"
+      className={`block overflow-hidden rounded-xl ${
+        dark
+          ? "bg-white/[0.06] ring-1 ring-white/10"
+          : "border border-line bg-surface shadow-card"
+      }`}
     >
       <span className="relative block aspect-video w-full bg-line">
         {/* Plain img: thumbs are tiny and come from our own /media route. */}
@@ -42,11 +48,17 @@ export default function VideoCard({
         </span>
       </span>
       <span className="block p-3">
-        <span className="line-clamp-1 block font-bold">{title}</span>
+        <span className={`line-clamp-1 block font-bold ${dark ? "text-night-ink" : ""}`}>
+          {title}
+        </span>
         <span className="mt-1 flex items-center gap-2">
           <ScoreBadge score={score} size="sm" />
           {creatorName && (
-            <span className="truncate text-[14px] text-ink-soft">{creatorName}</span>
+            <span
+              className={`truncate text-[14px] ${dark ? "text-night-ink-soft" : "text-ink-soft"}`}
+            >
+              {creatorName}
+            </span>
           )}
         </span>
       </span>

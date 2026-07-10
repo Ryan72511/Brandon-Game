@@ -7,7 +7,12 @@ import { CATEGORIES, CATEGORY_LABELS } from "@/lib/constants";
 
 const EMOJI_CHOICES = ["📺", "😂", "🎭", "💪", "🕵️", "❤️", "😱", "🍳", "🐾", "🎵", "🌍", "⭐"];
 
-export default function NewChannelButton() {
+export default function NewChannelButton({
+  variant = "pill",
+}: {
+  // "tile" renders as a dashed storefront cell on the dark channels page.
+  variant?: "pill" | "tile";
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -41,12 +46,24 @@ export default function NewChannelButton() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="min-h-12 rounded-full bg-accent px-5 font-bold text-white"
-      >
-        ＋ New channel
-      </button>
+      {variant === "tile" ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/25 bg-white/[0.04] transition hover:bg-white/[0.08] active:scale-[0.97]"
+        >
+          <span aria-hidden className="text-[28px] leading-none text-white/90">
+            ＋
+          </span>
+          <span className="text-[15px] font-semibold text-white/90">New channel</span>
+        </button>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="min-h-12 rounded-full bg-accent px-5 font-bold text-white"
+        >
+          ＋ New channel
+        </button>
+      )}
       {open && (
         <Sheet title="New channel" onClose={() => setOpen(false)}>
           <form onSubmit={submit} className="flex flex-col gap-4">

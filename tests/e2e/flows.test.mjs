@@ -102,7 +102,7 @@ await step("channels page shows prebuilt lineup + my channels", async () => {
 });
 
 await step("create a channel from the channels page", async () => {
-  await page.click("text=＋ New channel");
+  await page.click('button:has-text("New channel")');
   await page.fill('input[placeholder^="Like"]', "E2E Test Channel");
   await page.click('button:has-text("Create channel")');
   await page.waitForURL(/\/channel\/e2e-test-channel/);

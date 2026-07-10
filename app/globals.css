@@ -14,6 +14,12 @@
   --color-gold: #f2b01e;
   --color-gold-soft: #fdf3dd;
   --color-good: #42b72a;
+  /* Night tokens — the dark "storefront" canvas (channels routes only). */
+  --color-night: #0c0e1c;
+  --color-night-raised: #12142a;
+  --color-night-ink: #f4f5fa;
+  --color-night-ink-soft: #a7adc2;
+  --color-night-meta: #8e94ab;
   --radius-card: 12px;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.1);
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
@@ -111,4 +117,29 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .no-scrollbar {
   scrollbar-width: none;
+}
+
+/* The storefront's dark canvas: a faint aurora glow fading to near-black. */
+.night-canvas {
+  background-color: var(--color-night);
+  background-image:
+    radial-gradient(120% 60% at 50% -10%, rgba(94, 84, 255, 0.16), transparent 60%),
+    linear-gradient(180deg, #1a1d33 0%, #12142a 30%, #0c0e1c 100%);
+}
+
+/* Blue focus rings vanish on the dark canvas — use white there. */
+.night-scope :focus-visible {
+  outline-color: #ffffff;
+}
+
+/* Surprise Me's slowly breathing iridescent gradient. */
+@keyframes hero-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.hero-iridescent {
+  background-image: linear-gradient(120deg, #5b21b6, #be185d 45%, #7c3aed 80%, #5b21b6);
+  background-size: 300% 300%;
+  animation: hero-shift 9s ease-in-out infinite;
 }

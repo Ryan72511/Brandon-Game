@@ -7,7 +7,7 @@ import { parseTags } from "@/lib/format";
 import PageHeader from "@/components/PageHeader";
 import Avatar from "@/components/Avatar";
 import VideoCard from "@/components/VideoCard";
-import ChannelCard from "@/components/ChannelCard";
+import ChannelTile from "@/components/ChannelTile";
 
 export const dynamic = "force-dynamic";
 
@@ -148,18 +148,20 @@ export default async function CreatorPage({
       {creator.channels.filter((c) => c._count.videos > 0).length > 0 && (
         <section className="flex flex-col gap-3 px-4">
           <h3 className="text-lg font-bold">Their channels</h3>
-          {creator.channels
-            .filter((c) => c._count.videos > 0)
-            .map((c) => (
-              <ChannelCard
-                key={c.id}
-                slug={c.slug}
-                name={c.name}
-                emoji={c.emoji}
-                description={c.description}
-                videoCount={c._count.videos}
-              />
-            ))}
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+            {creator.channels
+              .filter((c) => c._count.videos > 0)
+              .map((c) => (
+                <ChannelTile
+                  key={c.id}
+                  slug={c.slug}
+                  name={c.name}
+                  emoji={c.emoji}
+                  category={c.category}
+                  caption={`${c._count.videos} ${c._count.videos === 1 ? "video" : "videos"}`}
+                />
+              ))}
+          </div>
         </section>
       )}
     </div>

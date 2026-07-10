@@ -8,6 +8,7 @@ import { getChart } from "@/lib/charts";
 import PageHeader from "@/components/PageHeader";
 import VideoCard from "@/components/VideoCard";
 import ChannelActions from "@/components/ChannelActions";
+import ChannelLogo from "@/components/ChannelLogo";
 import AddToChannelButton from "@/components/AddToChannelButton";
 
 export const dynamic = "force-dynamic";
@@ -58,18 +59,25 @@ export default async function ChannelPage({
   const recs = await getFeedVideos(recIds, user?.id ?? null);
 
   return (
-    <div className="flex flex-col gap-5 pb-6">
-      <PageHeader title={`${channel.emoji} ${channel.name}`} backHref="/channels" />
+    <div className="flex flex-col gap-5 pb-28">
+      <PageHeader title={channel.name} backHref="/channels" dark />
 
       <div className="flex flex-col gap-3 px-4">
-        {channel.description && <p className="text-ink-soft">{channel.description}</p>}
-        <p className="text-[14px] text-ink-soft">
+        <ChannelLogo
+          slug={channel.slug}
+          category={channel.category}
+          name={channel.name}
+          emoji={channel.emoji}
+          variant="wide"
+        />
+        {channel.description && <p className="text-night-ink-soft">{channel.description}</p>}
+        <p className="text-[14px] text-night-meta">
           {channel.isPrebuilt ? (
             "A Reely original channel"
           ) : channel.owner ? (
             <>
               Made by{" "}
-              <Link href={`/creator/${channel.owner.username}`} className="font-bold text-accent">
+              <Link href={`/creator/${channel.owner.username}`} className="font-bold text-white">
                 {channel.owner.displayName}
               </Link>
             </>
@@ -90,7 +98,7 @@ export default async function ChannelPage({
 
       <section className="flex flex-col gap-3 px-4">
         {videos.length === 0 ? (
-          <p className="rounded-xl bg-surface p-4 text-ink-soft">
+          <p className="rounded-xl bg-white/[0.06] p-4 text-night-ink-soft ring-1 ring-white/10">
             {isOwner
               ? "Nothing saved here yet. While watching, tap Save on any video you like."
               : "Nothing in this channel yet — check back soon!"}
@@ -106,6 +114,7 @@ export default async function ChannelPage({
               score={v.score}
               creatorName={v.creator.displayName}
               href={`/watch/${v.id}?ch=${channel.slug}`}
+              dark
             />
           ))
         )}
@@ -113,7 +122,7 @@ export default async function ChannelPage({
 
       {recs.length > 0 && (
         <section className="flex flex-col gap-3 px-4">
-          <h2 className="text-lg font-bold">
+          <h2 className="text-lg font-bold text-night-ink">
             {isOwner ? "You might want these in here" : "More like this channel"}
           </h2>
           {recs.map((v) => (
@@ -125,6 +134,7 @@ export default async function ChannelPage({
                 durationSec={v.durationSec}
                 score={v.score}
                 creatorName={v.creator.displayName}
+                dark
               />
               {isOwner && <AddToChannelButton channelId={channel.id} videoId={v.id} />}
             </div>

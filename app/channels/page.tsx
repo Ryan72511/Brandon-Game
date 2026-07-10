@@ -1,18 +1,31 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import PageHeader from "@/components/PageHeader";
-import ChannelCard from "@/components/ChannelCard";
+import ChannelTile from "@/components/ChannelTile";
+import ChannelLogo from "@/components/ChannelLogo";
 import NewChannelButton from "@/components/NewChannelButton";
 
 export const dynamic = "force-dynamic";
 
-// The channel guide: Surprise Me pinned first, then your channels, channels
-// you follow, and the prebuilt lineup.
+function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div className="mb-4 mt-10">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-night-meta">
+        {eyebrow}
+      </p>
+      <h2 className="text-[22px] font-bold leading-7 tracking-[-0.02em] text-night-ink">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+// The storefront: a dark, Roku-style wall of channel brands. Every channel
+// renders as its own "streamer" logo tile.
 export default async function ChannelsPage() {
   const user = await getCurrentUser();
 
-  const [mine, followed, prebuilt] = await Promise.all([
+  const [mine, followedRaw, prebuilt] = await Promise.all([
     user
       ? prisma.channel.findMany({
           where: { ownerId: user.id },
@@ -21,14 +34,10 @@ export default async function ChannelsPage() {
         })
       : Promise.resolve([]),
     user
-      ? prisma.channel
-          .findMany({
-            where: { followers: { some: { userId: user.id } } },
-            include: { _count: { select: { videos: true } } },
-          })
-          // Not a Prisma `not` filter: that would also drop ownerId=null
-          // (prebuilt) channels, since SQL NULL != x is never true.
-          .then((rows) => rows.filter((c) => c.ownerId !== user.id))
+      ? prisma.channel.findMany({
+          where: { followers: { some: { userId: user.id } } },
+          include: { _count: { select: { videos: true } } },
+        })
       : Promise.resolve([]),
     prisma.channel.findMany({
       where: { isPrebuilt: true },
@@ -36,92 +45,137 @@ export default async function ChannelsPage() {
       include: { _count: { select: { videos: true } } },
     }),
   ]);
+  // Plain JS, not a Prisma `not` filter: that would drop ownerId=null rows.
+  const followed = followedRaw.filter((c) => c.ownerId !== user?.id);
 
   const surprise = prebuilt.find((c) => c.kind === "surprise");
-  const regularPrebuilt = prebuilt.filter((c) => c.kind !== "surprise");
+  const weekly = prebuilt.find((c) => c.kind === "weekly");
+  const lineup = prebuilt.filter((c) => c.kind === "normal");
+
+  const count = (n: number) => `${n} ${n === 1 ? "video" : "videos"}`;
 
   return (
-    <div className="flex flex-col gap-6 p-4">
-      <PageHeader title="Channels" />
+    <div className="min-h-dvh">
+      <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-night-raised/85 px-4 py-3 backdrop-blur-md">
+        <h1 className="text-xl font-semibold text-night-ink">Channels</h1>
+      </header>
 
-      {surprise && (
-        <Link
-          href="/surprise"
-          className="flex min-h-24 items-center gap-4 rounded-xl bg-accent p-5 text-white shadow-card"
-        >
-          <span className="text-4xl" aria-hidden>
-            {surprise.emoji}
-          </span>
-          <span className="flex-1">
-            <span className="block text-xl font-bold">{surprise.name}</span>
-            <span className="block text-white/85">{surprise.description}</span>
-          </span>
-          <span aria-hidden className="text-2xl">
-            ›
-          </span>
-        </Link>
-      )}
-
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Your channels</h2>
-          {user && <NewChannelButton />}
-        </div>
-        {!user ? (
-          <p className="rounded-xl bg-surface p-4 text-ink-soft">
-            <Link href="/login" className="font-bold text-accent underline">
-              Sign in
-            </Link>{" "}
-            to make channels of your own — like a TV channel for anything you love.
-          </p>
-        ) : mine.length === 0 ? (
-          <p className="rounded-xl bg-surface p-4 text-ink-soft">
-            No channels yet. Tap “New channel”, or save any video while watching.
-          </p>
-        ) : (
-          mine.map((c) => (
-            <ChannelCard
-              key={c.id}
-              slug={c.slug}
-              name={c.name}
-              emoji={c.emoji}
-              description={c.description}
-              videoCount={c._count.videos}
-            />
-          ))
+      <div className="px-4 pb-28">
+        {/* Surprise Me billboard */}
+        {surprise && (
+          <Link
+            href="/surprise"
+            className="hero-iridescent relative mt-4 flex aspect-[2/1] w-full items-center gap-4 overflow-hidden rounded-2xl px-5 ring-1 ring-inset ring-white/15 transition hover:-translate-y-0.5 active:scale-[0.98]"
+          >
+            <span aria-hidden className="text-[64px] leading-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+              {surprise.emoji}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[26px] font-extrabold tracking-tight text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.35)]">
+                {surprise.name}
+              </span>
+              <span className="block text-[15px] text-white/80">Play something great</span>
+            </span>
+            <span
+              aria-hidden
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-lg text-night-raised shadow-[0_4px_12px_rgba(0,0,0,0.35)]"
+            >
+              ▶
+            </span>
+          </Link>
         )}
-      </section>
 
-      {followed.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-bold">Channels you follow</h2>
-          {followed.map((c) => (
-            <ChannelCard
+        {/* Your channels */}
+        <SectionHeader eyebrow="Your lineup" title="Your channels" />
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+          {user ? (
+            <NewChannelButton variant="tile" />
+          ) : (
+            <Link
+              href="/login?next=/channels"
+              className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/25 bg-white/[0.04] p-3 text-center transition hover:bg-white/[0.08]"
+            >
+              <span aria-hidden className="text-[28px] leading-none text-white/90">
+                ＋
+              </span>
+              <span className="text-[15px] font-semibold leading-tight text-white/90">
+                Sign in to build your own channel
+              </span>
+            </Link>
+          )}
+          {mine.map((c) => (
+            <ChannelTile
               key={c.id}
               slug={c.slug}
               name={c.name}
               emoji={c.emoji}
-              description={c.description}
-              videoCount={c._count.videos}
+              category={c.category}
+              caption={count(c._count.videos)}
             />
           ))}
-        </section>
-      )}
+        </div>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-bold">Always on</h2>
-        {regularPrebuilt.map((c) => (
-          <ChannelCard
-            key={c.id}
-            slug={c.slug}
-            name={c.name}
-            emoji={c.emoji}
-            description={c.description}
-            videoCount={c.kind === "weekly" ? undefined : c._count.videos}
-            badge={c.kind === "weekly" ? "Auto" : undefined}
-          />
-        ))}
-      </section>
+        {/* Following */}
+        {followed.length > 0 && (
+          <>
+            <SectionHeader eyebrow="Following" title="Channels you follow" />
+            <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+              {followed.map((c) => (
+                <ChannelTile
+                  key={c.id}
+                  slug={c.slug}
+                  name={c.name}
+                  emoji={c.emoji}
+                  category={c.category}
+                  caption={count(c._count.videos)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* The full lineup */}
+        <SectionHeader eyebrow="Always on" title="Every channel, always free" />
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+          {weekly && (
+            <Link
+              href={`/channel/${weekly.slug}`}
+              className="group relative col-span-2 block transition duration-150 hover:-translate-y-0.5 active:scale-[0.98]"
+            >
+              <ChannelLogo
+                slug={weekly.slug}
+                category={weekly.category}
+                name={weekly.name}
+                emoji={weekly.emoji}
+                variant="wide"
+              />
+              <span className="absolute right-3 top-3 rounded-full bg-gold px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#1c1917]">
+                Auto
+              </span>
+              <span className="mt-1.5 block text-center text-[13px] font-medium text-night-meta">
+                The week&apos;s top-rated videos, refreshed automatically
+              </span>
+            </Link>
+          )}
+          {lineup.map((c) => (
+            <ChannelTile
+              key={c.id}
+              slug={c.slug}
+              name={c.name}
+              emoji={c.emoji}
+              category={c.category}
+              caption={count(c._count.videos)}
+            />
+          ))}
+        </div>
+
+        {user && mine.length === 0 && (
+          <p className="mt-8 rounded-xl bg-white/[0.06] p-4 text-[15px] text-night-ink-soft ring-1 ring-white/10">
+            Tip: while watching, tap <span className="font-bold text-night-ink">Save</span> on any
+            video to start filling your own channel.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

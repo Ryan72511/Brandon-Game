@@ -63,7 +63,7 @@ export default function ChannelActions({
       {firstVideoId && (
         <button
           onClick={() => router.push(`/watch/${firstVideoId}?ch=${slug}`)}
-          className="min-h-14 flex-1 rounded-xl bg-accent font-bold text-white"
+          className="min-h-14 flex-1 rounded-xl bg-white font-bold text-night-raised shadow-[0_4px_12px_rgba(0,0,0,0.35)]"
         >
           ▶ Play all
         </button>
@@ -72,8 +72,10 @@ export default function ChannelActions({
         <button
           onClick={toggleFollow}
           aria-pressed={following}
-          className={`min-h-14 flex-1 rounded-xl border-2 font-bold ${
-            following ? "border-accent bg-accent-soft text-accent" : "border-line bg-surface"
+          className={`min-h-14 flex-1 rounded-xl font-bold ring-1 ring-inset ${
+            following
+              ? "bg-white/15 text-white ring-white/30"
+              : "bg-white/[0.08] text-white ring-white/15"
           }`}
         >
           {following ? "Following ✓" : "Follow"}
@@ -81,7 +83,7 @@ export default function ChannelActions({
       )}
       <button
         onClick={share}
-        className="min-h-14 flex-1 rounded-xl border-2 border-line bg-surface font-bold"
+        className="min-h-14 flex-1 rounded-xl bg-white/[0.08] font-bold text-white ring-1 ring-inset ring-white/15"
       >
         {copied ? "Link copied!" : "↗ Share"}
       </button>
