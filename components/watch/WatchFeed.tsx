@@ -15,7 +15,14 @@ import {
   type RatingValue,
 } from "@/lib/constants";
 
-type SheetKind = null | "rate" | "save" | "comments" | "detail";
+type SheetKind = "rate" | "save" | "comments" | "detail";
+
+// A sheet is pinned to the video it was opened on — if the feed auto-advances
+// underneath it, the sheet must keep acting on the original video.
+interface OpenSheet {
+  kind: SheetKind;
+  videoId: string;
+}
 
 interface RateResponse {
   counts: { burnt: number; popped: number; butter: number };
@@ -41,7 +48,7 @@ export default function WatchFeed({
   const [items, setItems] = useState(videos);
   const [myChannels, setMyChannels] = useState(initialChannels);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [sheet, setSheet] = useState<SheetKind>(null);
+  const [sheet, setSheet] = useState<OpenSheet | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const slideEls = useRef(new Map<number, HTMLDivElement>());
@@ -99,7 +106,8 @@ export default function WatchFeed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, items.length]);
 
-  const active = items[activeIndex] ?? null;
+  // The video a sheet is acting on (pinned at open time), else the on-screen one.
+  const sheetVideo = sheet ? (items.find((v) => v.id === sheet.videoId) ?? null) : null;
 
   function updateItem(id: string, patch: Partial<FeedVideo>) {
     setItems((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
@@ -107,13 +115,16 @@ export default function WatchFeed({
 
   function requireSignIn(): boolean {
     if (signedIn) return false;
-    router.push(`/login?next=${encodeURIComponent(window.location.pathname)}`);
+    router.push(
+      `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
+    );
     return true;
   }
 
   async function rate(value: RatingValue) {
-    if (!active || requireSignIn()) return;
-    const res = await fetch(`/api/videos/${active.id}/rate`, {
+    const target = sheetVideo;
+    if (!target || requireSignIn()) return;
+    const res = await fetch(`/api/videos/${target.id}/rate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ value }),
@@ -121,7 +132,7 @@ export default function WatchFeed({
     if (res.ok) {
       const data: RateResponse = await res.json();
       const count = data.counts.burnt + data.counts.popped + data.counts.butter;
-      updateItem(active.id, {
+      updateItem(target.id, {
         myRating: value,
         score:
           count < MIN_RATINGS_FOR_SCORE
@@ -139,18 +150,27 @@ export default function WatchFeed({
   }
 
   async function toggleSave(channelId: string, save: boolean) {
-    if (!active || requireSignIn()) return;
+    const target = sheetVideo;
+    if (!target || requireSignIn()) return;
     const res = await fetch(`/api/channels/${channelId}/videos`, {
       method: save ? "POST" : "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ videoId: active.id }),
+      body: JSON.stringify({ videoId: target.id }),
     });
     if (res.ok) {
-      updateItem(active.id, {
-        savedInChannelIds: save
-          ? [...active.savedInChannelIds, channelId]
-          : active.savedInChannelIds.filter((id) => id !== channelId),
-      });
+      // Functional update: rapid toggles must not clobber each other.
+      setItems((prev) =>
+        prev.map((v) =>
+          v.id === target.id
+            ? {
+                ...v,
+                savedInChannelIds: save
+                  ? [...new Set([...v.savedInChannelIds, channelId])]
+                  : v.savedInChannelIds.filter((id) => id !== channelId),
+              }
+            : v
+        )
+      );
     }
   }
 
@@ -171,9 +191,11 @@ export default function WatchFeed({
     return channel;
   }
 
-  function seekActive(seconds: number) {
-    const el = videoEls.current.get(activeIndex);
+  function seekSheetVideo(seconds: number) {
+    const index = sheet ? items.findIndex((v) => v.id === sheet.videoId) : activeIndex;
+    const el = videoEls.current.get(index);
     if (el) {
+      slideEls.current.get(index)?.scrollIntoView({ behavior: "instant", block: "start" });
       el.currentTime = seconds;
       el.play().catch(() => {});
     }
@@ -190,6 +212,8 @@ export default function WatchFeed({
   }
 
   function advance(fromIndex: number) {
+    // Never yank the feed while someone is mid-rate/comment/save.
+    if (sheet) return;
     if (fromIndex + 1 < items.length) {
       slideEls.current.get(fromIndex + 1)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -219,7 +243,7 @@ export default function WatchFeed({
             registerVideo={registerVideo}
             onOpenSheet={(kind) => {
               if ((kind === "rate" || kind === "save") && requireSignIn()) return;
-              setSheet(kind);
+              setSheet({ kind, videoId: video.id });
             }}
             onEnded={() => advance(index)}
             onNextEpisode={goToVideo}
@@ -227,30 +251,35 @@ export default function WatchFeed({
         ))}
       </div>
 
-      {sheet === "rate" && active && (
-        <RateSheet current={active.myRating} onRate={rate} onClose={() => setSheet(null)} />
+      {sheet?.kind === "rate" && sheetVideo && (
+        <RateSheet current={sheetVideo.myRating} onRate={rate} onClose={() => setSheet(null)} />
       )}
-      {sheet === "save" && active && (
+      {sheet?.kind === "save" && sheetVideo && (
         <SaveSheet
           channels={myChannels}
-          savedIn={active.savedInChannelIds}
+          savedIn={sheetVideo.savedInChannelIds}
           onToggle={toggleSave}
           onCreateChannel={createChannel}
           onClose={() => setSheet(null)}
         />
       )}
-      {sheet === "comments" && active && (
+      {sheet?.kind === "comments" && sheetVideo && (
         <CommentsSheet
-          videoId={active.id}
+          videoId={sheetVideo.id}
           signedIn={signedIn}
-          getCurrentTime={() => videoEls.current.get(activeIndex)?.currentTime ?? 0}
-          onSeek={seekActive}
-          onPosted={() => updateItem(active.id, { commentCount: active.commentCount + 1 })}
+          getCurrentTime={() => {
+            const index = items.findIndex((v) => v.id === sheetVideo.id);
+            return videoEls.current.get(index)?.currentTime ?? 0;
+          }}
+          onSeek={seekSheetVideo}
+          onPosted={() =>
+            updateItem(sheetVideo.id, { commentCount: sheetVideo.commentCount + 1 })
+          }
           onClose={() => setSheet(null)}
         />
       )}
-      {sheet === "detail" && active && (
-        <DetailSheet video={active} onClose={() => setSheet(null)} />
+      {sheet?.kind === "detail" && sheetVideo && (
+        <DetailSheet video={sheetVideo} onClose={() => setSheet(null)} />
       )}
     </>
   );

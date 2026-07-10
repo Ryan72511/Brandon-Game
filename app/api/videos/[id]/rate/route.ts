@@ -57,6 +57,8 @@ export const POST = withUser<Params>(async (user, req, { params }) => {
 
 export const DELETE = withUser<Params>(async (user, _req, { params }) => {
   const { id } = await params;
+  const video = await prisma.video.findUnique({ where: { id }, select: { id: true } });
+  if (!video) return jsonError("Video not found.", 404);
   const { counts, score } = await applyRating(id, user.id, null);
   return NextResponse.json({ ok: true, myRating: null, counts, score });
 });

@@ -34,7 +34,8 @@ export default function AuthForm() {
     setBusy(false);
     if (res.ok) {
       const next = searchParams.get("next") ?? "/";
-      router.push(next.startsWith("/") ? next : "/");
+      // Same-site paths only: "//evil.com" is protocol-relative, not local.
+      router.push(next.startsWith("/") && !next.startsWith("//") ? next : "/");
       router.refresh();
     } else {
       const data = await res.json().catch(() => ({}));

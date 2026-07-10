@@ -24,24 +24,47 @@ export async function POST(req: Request) {
   if (existing) return jsonError("That username is taken. Try another.", 409);
 
   const avatarColor = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
-  const user = await prisma.user.create({
-    data: {
-      username,
-      displayName,
-      passwordHash: hashPassword(password),
-      avatarEmoji,
-      avatarColor,
-      channels: {
-        // Everyone starts with one channel so "Save" always has a target.
-        create: {
-          slug: `${username}-favorites`,
-          name: "My Favorites",
-          emoji: "⭐",
-          description: "Videos I want to keep.",
-        },
+  // Everyone starts with one channel so "Save" always has a target. The
+  // starter slug gets a random suffix on collision; the username unique
+  // check re-races under concurrency, so P2002 maps to the friendly 409.
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: {
+        username,
+        displayName,
+        passwordHash: hashPassword(password),
+        avatarEmoji,
+        avatarColor,
       },
-    },
-  });
+    });
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2002") {
+      return jsonError("That username is taken. Try another.", 409);
+    }
+    throw err;
+  }
+  try {
+    await prisma.channel.create({
+      data: {
+        slug: `${username}-favorites`,
+        name: "My Favorites",
+        emoji: "⭐",
+        description: "Videos I want to keep.",
+        ownerId: user.id,
+      },
+    });
+  } catch {
+    await prisma.channel.create({
+      data: {
+        slug: `${username}-favorites-${Math.random().toString(36).slice(2, 6)}`,
+        name: "My Favorites",
+        emoji: "⭐",
+        description: "Videos I want to keep.",
+        ownerId: user.id,
+      },
+    });
+  }
   await createSession(user.id);
   return NextResponse.json({ ok: true, username: user.username });
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getChart } from "@/lib/charts";
+import { FRESH_POP_THRESHOLD } from "@/lib/constants";
 import { getFeedVideos } from "@/lib/data";
 import { getCurrentUser } from "@/lib/session";
 import PageHeader from "@/components/PageHeader";
@@ -57,18 +58,32 @@ export default async function ChartsPage({
         </p>
       ) : (
         <div className="flex flex-col gap-3">
-          {videos.map((v, i) => (
-            <VideoCard
-              key={v.id}
-              id={v.id}
-              title={v.title}
-              thumb={v.thumb}
-              durationSec={v.durationSec}
-              score={v.score}
-              creatorName={v.creator.displayName}
-              rank={i + 1}
-            />
-          ))}
+          {videos.map((v, i) => {
+            // Show the score the ranking actually used — on the weekly tab
+            // that's the weekly score, not the all-time badge.
+            const row = rows.find((r) => r.videoId === v.id);
+            const shownScore =
+              period === "weekly" && row
+                ? {
+                    kind: "scored" as const,
+                    score: row.score,
+                    count: row.ratings,
+                    fresh: row.score >= FRESH_POP_THRESHOLD,
+                  }
+                : v.score;
+            return (
+              <VideoCard
+                key={v.id}
+                id={v.id}
+                title={v.title}
+                thumb={v.thumb}
+                durationSec={v.durationSec}
+                score={shownScore}
+                creatorName={v.creator.displayName}
+                rank={i + 1}
+              />
+            );
+          })}
         </div>
       )}
 

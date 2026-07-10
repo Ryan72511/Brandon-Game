@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { recommendForUser } from "@/lib/recs";
+import { getChart } from "@/lib/charts";
 import { getFeedVideos, getMyChannels } from "@/lib/data";
 import WatchFeed from "@/components/watch/WatchFeed";
 
@@ -33,7 +34,11 @@ export default async function WatchPage({
       include: { videos: { orderBy: { addedAt: "desc" }, select: { videoId: true } } },
     });
     if (channel) {
-      const channelIds = channel.videos.map((v) => v.videoId);
+      // The weekly channel has no saved rows — its contents ARE the chart.
+      const channelIds =
+        channel.kind === "weekly"
+          ? (await getChart("weekly", 20)).map((r) => r.videoId)
+          : channel.videos.map((v) => v.videoId);
       // Start at the shared video, keep the channel's order after it.
       ids = [id, ...channelIds.filter((v) => v !== id)];
     }

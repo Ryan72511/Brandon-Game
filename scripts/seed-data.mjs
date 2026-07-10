@@ -267,6 +267,10 @@ export const PREBUILT_CHANNELS = [
     description: "Creators show how they made it — gear, tricks, bloopers." },
   { slug: "small-world", name: "Small World", emoji: "🌍", kind: "normal", category: "travel",
     description: "Tiny trips and hidden gems." },
+  { slug: "jukebox", name: "The Jukebox", emoji: "🎵", kind: "normal", category: "music",
+    description: "Street sounds and tiny concerts." },
+  { slug: "kids-corner", name: "Kids Corner", emoji: "🧸", kind: "normal", category: "kids",
+    description: "Silly little shows for little people." },
 ];
 
 export const SEED_COMMENTS = [

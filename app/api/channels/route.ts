@@ -19,7 +19,8 @@ export const POST = withUser(async (user, req) => {
   const description = cleanString(body.description, 200);
   const category = cleanString(body.category, 20) || "mixed";
 
-  // Find a free slug: name, name-2, name-3...
+  // Find a free slug (name, name-2, …). The check races with concurrent
+  // creates, so the create itself retries on unique-violation.
   const base = slugify(name);
   let slug = base;
   for (let i = 2; ; i++) {
@@ -28,9 +29,21 @@ export const POST = withUser(async (user, req) => {
     slug = `${base}-${i}`;
   }
 
-  const channel = await prisma.channel.create({
-    data: { slug, name, emoji, description, category, ownerId: user.id },
-  });
+  let channel;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      channel = await prisma.channel.create({
+        data: { slug, name, emoji, description, category, ownerId: user.id },
+      });
+      break;
+    } catch (err) {
+      if ((err as { code?: string }).code === "P2002" && attempt < 3) {
+        slug = `${base}-${Math.random().toString(36).slice(2, 6)}`;
+        continue;
+      }
+      throw err;
+    }
+  }
   return NextResponse.json({
     ok: true,
     channel: { id: channel.id, slug: channel.slug, name: channel.name, emoji: channel.emoji },

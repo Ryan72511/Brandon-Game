@@ -46,10 +46,12 @@ async function computeWeekly(limit: number): Promise<ChartRow[]> {
 }
 
 async function computeAllTime(limit: number): Promise<ChartRow[]> {
+  // Over-fetch generously: the min-ratings filter runs after this cut, and
+  // high-score/low-rating videos would otherwise crowd out qualifiers.
   const videos = await prisma.video.findMany({
     select: { id: true, popcornScore: true, burntCount: true, poppedCount: true, butterCount: true },
     orderBy: { popcornScore: "desc" },
-    take: limit * 4,
+    take: limit * 25,
   });
   return videos
     .map((v) => ({
