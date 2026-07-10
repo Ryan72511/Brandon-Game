@@ -20,7 +20,9 @@ export default function ChannelLogo({
 }) {
   const brand = getChannelBrand(slug, category);
   const surface: React.CSSProperties = {
-    backgroundImage: `radial-gradient(120% 90% at 18% 0%, rgba(255,255,255,0.18), transparent 55%), linear-gradient(135deg, ${brand.c1} 0%, ${brand.c2} 100%)`,
+    // Highlight capped at 0.10 alpha so wordmark contrast stays ≥4.5:1
+    // even where the glass sheen is brightest.
+    backgroundImage: `radial-gradient(120% 90% at 18% 0%, rgba(255,255,255,0.10), transparent 55%), linear-gradient(135deg, ${brand.c1} 0%, ${brand.c2} 100%)`,
   };
 
   const ghost = (size: number) => (

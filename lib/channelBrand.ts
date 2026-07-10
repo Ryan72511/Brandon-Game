@@ -45,13 +45,13 @@ export function getChannelBrand(slug: string, category: string): ChannelBrand {
   const genre = CATEGORY_GRADIENTS[category];
   if (genre) return { c1: genre[0], c2: genre[1] };
   // User-created channels without a genre: hash the slug into a deep hue,
-  // skipping the yellow band (40-100°) that fails white-text contrast.
-  // Lightness stays low (30%/20%) so even green/cyan hues hold ≥4.5:1
-  // under white text with the glass highlight on top.
+  // skipping the yellow band (38-100°) that fails white-text contrast.
+  // 29% lightness holds ≥4.79:1 under white text on every reachable hue
+  // (greens/cyans are the perceptual worst case).
   let hue = djb2(slug) % 300;
-  if (hue >= 40 && hue <= 100) hue += 70;
+  if (hue >= 38 && hue <= 100) hue += 70;
   return {
-    c1: `hsl(${hue}, 72%, 30%)`,
+    c1: `hsl(${hue}, 72%, 29%)`,
     c2: `hsl(${(hue + 40) % 360}, 78%, 20%)`,
   };
 }
