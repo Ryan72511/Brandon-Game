@@ -52,7 +52,7 @@ export default async function ChartsPage({
       </div>
 
       {videos.length === 0 ? (
-        <p className="rounded-2xl bg-surface p-4 text-ink-soft">
+        <p className="rounded-xl bg-surface p-4 text-ink-soft">
           Not enough ratings yet this {period === "weekly" ? "week" : "…ever"}. Go pop some
           popcorn on videos you like!
         </p>

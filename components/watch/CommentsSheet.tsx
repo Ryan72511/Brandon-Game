@@ -84,7 +84,7 @@ export default function CommentsSheet({
             aria-label="Write a comment"
             maxLength={500}
             rows={2}
-            className="w-full rounded-2xl border-2 border-line bg-surface p-3 text-lg outline-none focus:border-accent"
+            className="w-full rounded-xl border-2 border-line bg-surface p-3 text-lg outline-none focus:border-accent"
           />
           <div className="flex items-center gap-2">
             {stamp !== null && (
@@ -100,7 +100,7 @@ export default function CommentsSheet({
             <button
               type="submit"
               disabled={!text.trim() || posting}
-              className="ml-auto min-h-12 rounded-2xl bg-accent px-6 font-bold text-white disabled:opacity-40"
+              className="ml-auto min-h-12 rounded-xl bg-accent px-6 font-bold text-white disabled:opacity-40"
             >
               {posting ? "Posting…" : "Post"}
             </button>
@@ -108,7 +108,7 @@ export default function CommentsSheet({
           {error && <p className="text-[15px] font-semibold text-accent">{error}</p>}
         </form>
       ) : (
-        <p className="mb-4 rounded-2xl bg-bg p-4 text-center">
+        <p className="mb-4 rounded-xl bg-bg p-4 text-center">
           <a href="/login" className="font-bold text-accent underline">
             Sign in
           </a>{" "}

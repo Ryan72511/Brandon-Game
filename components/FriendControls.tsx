@@ -42,12 +42,12 @@ export function AddFriendForm() {
           placeholder="their username"
           aria-label="Friend's username"
           maxLength={20}
-          className="min-h-14 flex-1 rounded-2xl border-2 border-line bg-surface px-4 text-lg outline-none focus:border-accent"
+          className="min-h-14 flex-1 rounded-xl border-2 border-line bg-surface px-4 text-lg outline-none focus:border-accent"
         />
         <button
           type="submit"
           disabled={!username.trim() || busy}
-          className="min-h-14 rounded-2xl bg-accent px-6 font-bold text-white disabled:opacity-40"
+          className="min-h-14 rounded-xl bg-accent px-6 font-bold text-white disabled:opacity-40"
         >
           {busy ? "…" : "Invite"}
         </button>

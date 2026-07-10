@@ -22,7 +22,7 @@ export default function DetailSheet({
       <div className="flex flex-col gap-4">
         <Link
           href={`/creator/${video.creator.username}`}
-          className="flex items-center gap-3 rounded-2xl border border-line bg-bg p-3"
+          className="flex items-center gap-3 rounded-xl border border-line bg-bg p-3"
         >
           <Avatar emoji={video.creator.avatarEmoji} color={video.creator.avatarColor} size={44} />
           <span className="flex-1">
@@ -41,7 +41,7 @@ export default function DetailSheet({
         </div>
 
         {video.series && (
-          <p className="rounded-2xl bg-gold-soft px-4 py-2 text-[15px] font-semibold">
+          <p className="rounded-xl bg-gold-soft px-4 py-2 text-[15px] font-semibold">
             🎬 {video.series.title}
             {video.episodeNumber ? ` — Episode ${video.episodeNumber}` : ""}
           </p>

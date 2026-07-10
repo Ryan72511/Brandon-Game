@@ -18,9 +18,9 @@ export default function ChannelCard({
   return (
     <Link
       href={`/channel/${slug}`}
-      className="flex min-h-20 items-center gap-4 rounded-2xl border border-line bg-surface p-4 shadow-card"
+      className="flex min-h-20 items-center gap-4 rounded-xl border border-line bg-surface p-4 shadow-card"
     >
-      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-bg text-3xl" aria-hidden>
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-bg text-3xl" aria-hidden>
         {emoji}
       </span>
       <span className="min-w-0 flex-1">

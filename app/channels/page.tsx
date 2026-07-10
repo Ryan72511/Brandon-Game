@@ -47,7 +47,7 @@ export default async function ChannelsPage() {
       {surprise && (
         <Link
           href="/surprise"
-          className="flex min-h-24 items-center gap-4 rounded-3xl bg-accent p-5 text-white shadow-card"
+          className="flex min-h-24 items-center gap-4 rounded-xl bg-accent p-5 text-white shadow-card"
         >
           <span className="text-4xl" aria-hidden>
             {surprise.emoji}
@@ -68,14 +68,14 @@ export default async function ChannelsPage() {
           {user && <NewChannelButton />}
         </div>
         {!user ? (
-          <p className="rounded-2xl bg-surface p-4 text-ink-soft">
+          <p className="rounded-xl bg-surface p-4 text-ink-soft">
             <Link href="/login" className="font-bold text-accent underline">
               Sign in
             </Link>{" "}
             to make channels of your own — like a TV channel for anything you love.
           </p>
         ) : mine.length === 0 ? (
-          <p className="rounded-2xl bg-surface p-4 text-ink-soft">
+          <p className="rounded-xl bg-surface p-4 text-ink-soft">
             No channels yet. Tap “New channel”, or save any video while watching.
           </p>
         ) : (

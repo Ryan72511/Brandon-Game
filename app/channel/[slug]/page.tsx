@@ -90,7 +90,7 @@ export default async function ChannelPage({
 
       <section className="flex flex-col gap-3 px-4">
         {videos.length === 0 ? (
-          <p className="rounded-2xl bg-surface p-4 text-ink-soft">
+          <p className="rounded-xl bg-surface p-4 text-ink-soft">
             {isOwner
               ? "Nothing saved here yet. While watching, tap Save on any video you like."
               : "Nothing in this channel yet — check back soon!"}

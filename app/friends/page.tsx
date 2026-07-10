@@ -55,7 +55,7 @@ export default async function FriendsPage() {
           {incoming.map((f) => (
             <div
               key={f.id}
-              className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-card"
+              className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 shadow-card"
             >
               <Avatar emoji={f.requester.avatarEmoji} color={f.requester.avatarColor} size={44} />
               <div className="min-w-0 flex-1">
@@ -71,7 +71,7 @@ export default async function FriendsPage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-bold">Your friends</h2>
         {friends.length === 0 ? (
-          <p className="rounded-2xl bg-surface p-4 text-ink-soft">
+          <p className="rounded-xl bg-surface p-4 text-ink-soft">
             No friends yet — add someone above, or share a channel you love.
           </p>
         ) : (
@@ -79,7 +79,7 @@ export default async function FriendsPage() {
             <Link
               key={f.username}
               href={`/creator/${f.username}`}
-              className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-surface px-3 shadow-card"
+              className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-3 shadow-card"
             >
               <Avatar emoji={f.avatarEmoji} color={f.avatarColor} size={44} />
               <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export default async function FriendsPage() {
           {outgoing.map((f) => (
             <div
               key={f.id}
-              className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3"
+              className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3"
             >
               <Avatar emoji={f.addressee.avatarEmoji} color={f.addressee.avatarColor} size={44} />
               <p className="flex-1 font-semibold">{f.addressee.displayName}</p>

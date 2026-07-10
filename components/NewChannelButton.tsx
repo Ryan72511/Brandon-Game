@@ -58,7 +58,7 @@ export default function NewChannelButton() {
                 placeholder="Like “Funny animal shows”"
                 maxLength={40}
                 required
-                className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+                className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
               />
             </label>
             <fieldset>
@@ -86,7 +86,7 @@ export default function NewChannelButton() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="One friendly sentence"
                 maxLength={200}
-                className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+                className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
               />
             </label>
             <label className="flex flex-col gap-1 font-semibold">
@@ -94,7 +94,7 @@ export default function NewChannelButton() {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+                className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
               >
                 <option value="">A bit of everything</option>
                 {CATEGORIES.map((c) => (
@@ -108,7 +108,7 @@ export default function NewChannelButton() {
             <button
               type="submit"
               disabled={!name.trim() || busy}
-              className="min-h-14 rounded-2xl bg-accent font-bold text-white disabled:opacity-40"
+              className="min-h-14 rounded-xl bg-accent font-bold text-white disabled:opacity-40"
             >
               {busy ? "Creating…" : "Create channel"}
             </button>

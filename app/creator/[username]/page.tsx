@@ -65,21 +65,21 @@ export default async function CreatorPage({
         {isSelf && (
           <Link
             href="/studio/profile"
-            className="min-h-12 rounded-2xl border-2 border-line bg-surface px-4 py-3 text-center font-bold"
+            className="min-h-12 rounded-xl border-2 border-line bg-surface px-4 py-3 text-center font-bold"
           >
             ✏️ Edit your creator page
           </Link>
         )}
 
         {creator.creatorAbout && (
-          <section className="rounded-3xl border border-line bg-surface p-4 shadow-card">
+          <section className="rounded-xl border border-line bg-surface p-4 shadow-card">
             <h3 className="mb-1 font-bold">About this creator</h3>
             <p className="whitespace-pre-wrap text-ink-soft">{creator.creatorAbout}</p>
           </section>
         )}
 
         {(tools.length > 0 || creator.creatorProcess) && (
-          <section className="rounded-3xl border border-line bg-surface p-4 shadow-card">
+          <section className="rounded-xl border border-line bg-surface p-4 shadow-card">
             <h3 className="mb-2 font-bold">How they make it</h3>
             {tools.length > 0 && (
               <p className="mb-2 flex flex-wrap gap-2">
@@ -114,7 +114,7 @@ export default async function CreatorPage({
                 <Link
                   key={s.id}
                   href={first ? `/watch/${first.id}?series=${s.id}` : "#"}
-                  className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-surface px-4 shadow-card"
+                  className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-4 shadow-card"
                 >
                   <span className="text-2xl" aria-hidden>
                     🎬

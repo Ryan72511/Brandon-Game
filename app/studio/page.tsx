@@ -30,23 +30,23 @@ export default async function StudioPage() {
 
       <Link
         href="/studio/upload"
-        className="flex min-h-20 items-center justify-center gap-3 rounded-3xl bg-accent text-xl font-bold text-white shadow-card"
+        className="flex min-h-20 items-center justify-center gap-3 rounded-xl bg-accent text-xl font-bold text-white shadow-card"
       >
         ＋ Add a video
       </Link>
 
       <div className="flex gap-3">
-        <div className="flex-1 rounded-2xl border border-line bg-surface p-4 text-center shadow-card">
+        <div className="flex-1 rounded-xl border border-line bg-surface p-4 text-center shadow-card">
           <p className="text-3xl font-bold">{videos.length}</p>
           <p className="text-[14px] text-ink-soft">videos</p>
         </div>
-        <div className="flex-1 rounded-2xl border border-line bg-surface p-4 text-center shadow-card">
+        <div className="flex-1 rounded-xl border border-line bg-surface p-4 text-center shadow-card">
           <p className="text-3xl font-bold">{totalViews}</p>
           <p className="text-[14px] text-ink-soft">views</p>
         </div>
         <Link
           href="/studio/profile"
-          className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-line bg-surface p-4 text-center shadow-card"
+          className="flex flex-1 flex-col items-center justify-center rounded-xl border border-line bg-surface p-4 text-center shadow-card"
         >
           <p className="text-3xl" aria-hidden>
             ✏️
@@ -56,7 +56,7 @@ export default async function StudioPage() {
       </div>
 
       {videos.length === 0 ? (
-        <div className="rounded-3xl border border-line bg-surface p-6 text-center shadow-card">
+        <div className="rounded-xl border border-line bg-surface p-6 text-center shadow-card">
           <p className="text-4xl" aria-hidden>
             🎥
           </p>

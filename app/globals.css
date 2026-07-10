@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
-/* Reely design tokens — warm minimal: off-white, one coral accent, popcorn
-   gold reserved for scores. 8px spacing grid, 16px radii, one soft shadow. */
+/* Reely design tokens — Facebook-familiar: cool gray canvas, white cards,
+   one blue accent. Popcorn gold stays reserved for scores so the rating
+   brand keeps its meaning. 8px spacing grid, one soft shadow. */
 @theme {
-  --color-bg: #fafaf7;
+  --color-bg: #f0f2f5;
   --color-surface: #ffffff;
-  --color-line: #e8e6e1;
-  --color-ink: #1a1a1a;
-  --color-ink-soft: #5c5c5c;
-  --color-accent: #e8503a;
-  --color-accent-soft: #fdeeeb;
+  --color-line: #dadde1;
+  --color-ink: #050505;
+  --color-ink-soft: #65676b;
+  --color-accent: #1877f2;
+  --color-accent-soft: #e7f3ff;
   --color-gold: #f2b01e;
   --color-gold-soft: #fdf3dd;
-  --color-good: #2e7d4f;
-  --radius-card: 16px;
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --color-good: #42b72a;
+  --radius-card: 12px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.1);
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
 }

@@ -79,7 +79,7 @@ export default function AuthForm() {
             autoComplete="username"
             maxLength={20}
             required
-            className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+            className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
           />
         </label>
         {mode === "signup" && (
@@ -91,7 +91,7 @@ export default function AuthForm() {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="like Sunny Dan"
                 maxLength={40}
-                className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+                className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
               />
             </label>
             <fieldset>
@@ -123,14 +123,14 @@ export default function AuthForm() {
             placeholder={mode === "signup" ? "at least 6 characters" : ""}
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             required
-            className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+            className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
           />
         </label>
         {error && <p className="font-semibold text-accent">{error}</p>}
         <button
           type="submit"
           disabled={busy}
-          className="min-h-14 rounded-2xl bg-accent text-lg font-bold text-white disabled:opacity-40"
+          className="min-h-14 rounded-xl bg-accent text-lg font-bold text-white disabled:opacity-40"
         >
           {busy ? "One moment…" : mode === "signup" ? "Start watching" : "Sign in"}
         </button>

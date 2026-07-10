@@ -29,7 +29,7 @@ export default async function YouPage() {
     <div className="flex flex-col gap-5 p-4">
       <PageHeader title="You" />
 
-      <div className="flex items-center gap-4 rounded-3xl border border-line bg-surface p-5 shadow-card">
+      <div className="flex items-center gap-4 rounded-xl border border-line bg-surface p-5 shadow-card">
         <Avatar emoji={user.avatarEmoji} color={user.avatarColor} size={64} />
         <div className="min-w-0">
           <p className="truncate text-2xl font-bold">{user.displayName}</p>
@@ -43,7 +43,7 @@ export default async function YouPage() {
       <nav className="flex flex-col gap-3">
         <Link
           href="/friends"
-          className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-surface px-4 shadow-card"
+          className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-4 shadow-card"
         >
           <span className="text-2xl" aria-hidden>
             👋
@@ -60,7 +60,7 @@ export default async function YouPage() {
         </Link>
         <Link
           href="/channels"
-          className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-surface px-4 shadow-card"
+          className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-4 shadow-card"
         >
           <span className="text-2xl" aria-hidden>
             📺
@@ -70,7 +70,7 @@ export default async function YouPage() {
         </Link>
         <Link
           href={`/creator/${user.username}`}
-          className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-surface px-4 shadow-card"
+          className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-4 shadow-card"
         >
           <span className="text-2xl" aria-hidden>
             🎬

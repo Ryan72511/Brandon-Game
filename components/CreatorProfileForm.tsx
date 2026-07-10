@@ -61,7 +61,7 @@ export default function CreatorProfileForm({
           onChange={(e) => setDisplayName(e.target.value)}
           maxLength={40}
           required
-          className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+          className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
       <label className="flex flex-col gap-1 font-semibold">
@@ -71,7 +71,7 @@ export default function CreatorProfileForm({
           onChange={(e) => setBio(e.target.value)}
           placeholder="One friendly line"
           maxLength={200}
-          className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+          className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
       <label className="flex flex-col gap-1 font-semibold">
@@ -82,7 +82,7 @@ export default function CreatorProfileForm({
           placeholder="Your story — why you make these"
           maxLength={2000}
           rows={4}
-          className="rounded-2xl border-2 border-line bg-surface p-4 text-lg font-normal outline-none focus:border-accent"
+          className="rounded-xl border-2 border-line bg-surface p-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
       <label className="flex flex-col gap-1 font-semibold">
@@ -91,7 +91,7 @@ export default function CreatorProfileForm({
           value={toolsText}
           onChange={(e) => setToolsText(e.target.value)}
           placeholder="iPhone 15, CapCut, ring light"
-          className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+          className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
       <label className="flex flex-col gap-1 font-semibold">
@@ -102,7 +102,7 @@ export default function CreatorProfileForm({
           placeholder="How an episode goes from idea to upload"
           maxLength={2000}
           rows={4}
-          className="rounded-2xl border-2 border-line bg-surface p-4 text-lg font-normal outline-none focus:border-accent"
+          className="rounded-xl border-2 border-line bg-surface p-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
 
@@ -113,14 +113,14 @@ export default function CreatorProfileForm({
         <button
           type="submit"
           disabled={busy}
-          className="min-h-14 flex-1 rounded-2xl bg-accent font-bold text-white disabled:opacity-40"
+          className="min-h-14 flex-1 rounded-xl bg-accent font-bold text-white disabled:opacity-40"
         >
           {busy ? "Saving…" : "Save"}
         </button>
         <button
           type="button"
           onClick={() => router.push(`/creator/${username}`)}
-          className="min-h-14 flex-1 rounded-2xl border-2 border-line bg-surface font-bold"
+          className="min-h-14 flex-1 rounded-xl border-2 border-line bg-surface font-bold"
         >
           See your page
         </button>

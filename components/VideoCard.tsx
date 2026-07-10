@@ -26,7 +26,7 @@ export default function VideoCard({
   return (
     <Link
       href={href ?? `/watch/${id}`}
-      className="block overflow-hidden rounded-2xl border border-line bg-surface shadow-card"
+      className="block overflow-hidden rounded-xl border border-line bg-surface shadow-card"
     >
       <span className="relative block aspect-video w-full bg-line">
         {/* Plain img: thumbs are tiny and come from our own /media route. */}

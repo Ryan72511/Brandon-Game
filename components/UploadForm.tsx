@@ -126,7 +126,7 @@ export default function UploadForm() {
       <button
         type="button"
         onClick={() => fileInput.current?.click()}
-        className={`flex min-h-32 flex-col items-center justify-center gap-1 rounded-3xl border-2 border-dashed p-4 ${
+        className={`flex min-h-32 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed p-4 ${
           file ? "border-good bg-surface" : "border-line bg-surface"
         }`}
       >
@@ -159,14 +159,14 @@ export default function UploadForm() {
         <img
           src={posterUrl}
           alt="Preview of your video"
-          className="aspect-video w-full rounded-2xl border border-line object-cover"
+          className="aspect-video w-full rounded-xl border border-line object-cover"
         />
       )}
       {aspectWarning && (
-        <p className="rounded-2xl bg-gold-soft p-3 text-[15px] font-semibold">⚠️ {aspectWarning}</p>
+        <p className="rounded-xl bg-gold-soft p-3 text-[15px] font-semibold">⚠️ {aspectWarning}</p>
       )}
       {durationError && (
-        <p className="rounded-2xl bg-accent-soft p-3 text-[15px] font-semibold text-accent">
+        <p className="rounded-xl bg-accent-soft p-3 text-[15px] font-semibold text-accent">
           {durationError}
         </p>
       )}
@@ -179,7 +179,7 @@ export default function UploadForm() {
           placeholder="Give it a great name"
           maxLength={80}
           required
-          className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+          className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
 
@@ -189,7 +189,7 @@ export default function UploadForm() {
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           required
-          className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+          className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         >
           <option value="" disabled>
             Pick one…
@@ -208,7 +208,7 @@ export default function UploadForm() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           maxLength={300}
-          className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+          className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
 
@@ -220,7 +220,7 @@ export default function UploadForm() {
           placeholder="How you made it, why, what went wrong, bloopers…"
           maxLength={2000}
           rows={3}
-          className="rounded-2xl border-2 border-line bg-surface p-4 text-lg font-normal outline-none focus:border-accent"
+          className="rounded-xl border-2 border-line bg-surface p-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
 
@@ -231,7 +231,7 @@ export default function UploadForm() {
           onChange={(e) => setSeriesTitle(e.target.value)}
           placeholder="Series name — episodes number themselves"
           maxLength={80}
-          className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+          className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
 
@@ -242,7 +242,7 @@ export default function UploadForm() {
           onChange={(e) => setTags(e.target.value)}
           placeholder="dogs, sitcom, office"
           maxLength={200}
-          className="min-h-14 rounded-2xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+          className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
 
@@ -251,7 +251,7 @@ export default function UploadForm() {
       <button
         type="submit"
         disabled={!file || !title.trim() || !category || busy || probing || Boolean(durationError)}
-        className="min-h-16 rounded-2xl bg-accent text-xl font-bold text-white disabled:opacity-40"
+        className="min-h-16 rounded-xl bg-accent text-xl font-bold text-white disabled:opacity-40"
       >
         {busy ? "Uploading…" : "Put it on Reely 🍿"}
       </button>

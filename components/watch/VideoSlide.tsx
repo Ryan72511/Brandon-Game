@@ -162,7 +162,7 @@ export default function VideoSlide({
       <div className="flex items-stretch gap-1 px-3 pt-1">
         <button
           onClick={() => onOpenSheet("rate")}
-          className="flex min-h-14 flex-1 flex-col items-center justify-center rounded-2xl text-[13px] font-semibold hover:bg-white/10"
+          className="flex min-h-14 flex-1 flex-col items-center justify-center rounded-xl text-[13px] font-semibold hover:bg-white/10"
         >
           <span className="text-2xl leading-tight" aria-hidden>
             {video.myRating ? RATING_META[video.myRating as keyof typeof RATING_META].emoji : "🍿"}
@@ -171,7 +171,7 @@ export default function VideoSlide({
         </button>
         <button
           onClick={() => onOpenSheet("save")}
-          className="flex min-h-14 flex-1 flex-col items-center justify-center rounded-2xl text-[13px] font-semibold hover:bg-white/10"
+          className="flex min-h-14 flex-1 flex-col items-center justify-center rounded-xl text-[13px] font-semibold hover:bg-white/10"
         >
           <span className="text-2xl leading-tight" aria-hidden>
             {saved ? "✅" : "➕"}
@@ -180,7 +180,7 @@ export default function VideoSlide({
         </button>
         <button
           onClick={() => onOpenSheet("comments")}
-          className="flex min-h-14 flex-1 flex-col items-center justify-center rounded-2xl text-[13px] font-semibold hover:bg-white/10"
+          className="flex min-h-14 flex-1 flex-col items-center justify-center rounded-xl text-[13px] font-semibold hover:bg-white/10"
         >
           <span className="text-2xl leading-tight" aria-hidden>
             💬
@@ -189,7 +189,7 @@ export default function VideoSlide({
         </button>
         <button
           onClick={share}
-          className="flex min-h-14 flex-1 flex-col items-center justify-center rounded-2xl text-[13px] font-semibold hover:bg-white/10"
+          className="flex min-h-14 flex-1 flex-col items-center justify-center rounded-xl text-[13px] font-semibold hover:bg-white/10"
         >
           <span className="text-2xl leading-tight" aria-hidden>
             ↗️
@@ -201,7 +201,7 @@ export default function VideoSlide({
       {/* Title + score + teaser -> detail sheet */}
       <button
         onClick={() => onOpenSheet("detail")}
-        className="mx-4 mt-2 rounded-2xl bg-white/5 p-3 text-left hover:bg-white/10"
+        className="mx-4 mt-2 rounded-xl bg-white/5 p-3 text-left hover:bg-white/10"
       >
         <span className="flex items-center gap-2">
           <span className="line-clamp-1 flex-1 text-lg font-bold">{video.title}</span>
@@ -221,7 +221,7 @@ export default function VideoSlide({
         <div className="px-4 pt-2">
           <button
             onClick={() => onNextEpisode(video.nextEpisodeId!)}
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-accent font-bold text-white"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent font-bold text-white"
           >
             Next episode ▸
           </button>

@@ -12,7 +12,7 @@ export default function LogoutButton() {
   return (
     <button
       onClick={logout}
-      className="min-h-14 rounded-2xl border-2 border-line bg-surface font-bold text-ink-soft"
+      className="min-h-14 rounded-xl border-2 border-line bg-surface font-bold text-ink-soft"
     >
       Sign out
     </button>

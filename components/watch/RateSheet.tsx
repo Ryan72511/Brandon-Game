@@ -24,7 +24,7 @@ export default function RateSheet({
               key={value}
               onClick={() => onRate(value)}
               aria-pressed={selected}
-              className={`flex min-h-16 items-center gap-4 rounded-2xl border-2 px-4 py-3 text-left transition-colors ${
+              className={`flex min-h-16 items-center gap-4 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                 selected
                   ? "border-accent bg-accent-soft"
                   : "border-line bg-surface hover:bg-bg"

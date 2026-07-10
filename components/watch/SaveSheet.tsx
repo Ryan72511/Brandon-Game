@@ -47,7 +47,7 @@ export default function SaveSheet({
               key={ch.id}
               onClick={() => onToggle(ch.id, !saved)}
               aria-pressed={saved}
-              className={`flex min-h-14 items-center gap-3 rounded-2xl border-2 px-4 py-2 text-left ${
+              className={`flex min-h-14 items-center gap-3 rounded-xl border-2 px-4 py-2 text-left ${
                 saved ? "border-accent bg-accent-soft" : "border-line bg-surface hover:bg-bg"
               }`}
             >
@@ -68,12 +68,12 @@ export default function SaveSheet({
             placeholder="New channel name…"
             aria-label="New channel name"
             maxLength={40}
-            className="min-h-14 flex-1 rounded-2xl border-2 border-line bg-surface px-4 text-lg outline-none focus:border-accent"
+            className="min-h-14 flex-1 rounded-xl border-2 border-line bg-surface px-4 text-lg outline-none focus:border-accent"
           />
           <button
             type="submit"
             disabled={!newName.trim() || creating}
-            className="min-h-14 rounded-2xl bg-accent px-5 font-bold text-white disabled:opacity-40"
+            className="min-h-14 rounded-xl bg-accent px-5 font-bold text-white disabled:opacity-40"
           >
             {creating ? "…" : "Create"}
           </button>

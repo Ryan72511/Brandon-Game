@@ -29,7 +29,7 @@ export default function ModeSwitch({ mode }: { mode: string }) {
     <button
       onClick={toggle}
       disabled={busy}
-      className="flex min-h-16 w-full items-center gap-3 rounded-2xl bg-accent px-5 font-bold text-white shadow-card disabled:opacity-60"
+      className="flex min-h-16 w-full items-center gap-3 rounded-xl bg-accent px-5 font-bold text-white shadow-card disabled:opacity-60"
     >
       <span className="text-2xl" aria-hidden>
         {creating ? "▶" : "🎬"}
