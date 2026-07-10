@@ -1,0 +1,199 @@
+// Reely data model — SQLite for local dev/demo, designed to port 1:1 to Postgres.
+// Enum-like fields use String because SQLite has no native enums; allowed
+// values are documented per field and enforced in lib/validate.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  username    String   @unique
+  displayName String
+  avatarEmoji String   @default("🙂")
+  avatarColor String   @default("#FFD166")
+  bio         String   @default("")
+  // "watching" | "creating" — which mode the user last toggled to
+  mode        String   @default("watching")
+  createdAt   DateTime @default(now())
+
+  // Creator-profile fields (filled in when they switch to creating)
+  creatorAbout   String @default("")
+  creatorTools   String @default("") // JSON array of strings: tools/equipment
+  creatorProcess String @default("")
+
+  passwordHash String
+
+  videos        Video[]
+  series        Series[]
+  channels      Channel[]
+  ratings       Rating[]
+  comments      Comment[]
+  follows       Follow[]
+  watchEvents   WatchEvent[]
+  sentFriend    Friendship[] @relation("requester")
+  gotFriend     Friendship[] @relation("addressee")
+  sessions      Session[]
+}
+
+model Session {
+  token     String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// A mini-series / microdrama container. Every video can stand alone
+// (seriesId null) or be an episode.
+model Series {
+  id          String   @id @default(cuid())
+  creatorId   String
+  creator     User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  title       String
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  videos      Video[]
+
+  @@index([creatorId])
+}
+
+model Video {
+  id            String  @id @default(cuid())
+  creatorId     String
+  creator       User    @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  seriesId      String?
+  series        Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  episodeNumber Int?
+  title         String
+  description String   @default("")
+  backstory   String   @default("") // "how I made it / why" — creator insight
+  src         String // /videos/xxx.mp4 locally; object-storage/CDN URL in prod
+  thumb       String // poster image URL
+  durationSec Int
+  category    String // one of lib/validate.ts CATEGORIES
+  tags        String   @default("") // JSON array of strings
+  createdAt   DateTime @default(now())
+
+  // Denormalized rating counters — recomputed from aggregates inside the same
+  // transaction as every rating write (never incremented blindly).
+  burntCount  Int @default(0)
+  poppedCount Int @default(0)
+  butterCount Int @default(0)
+  // Cached all-time Popcorn Score (Bayesian-smoothed % popped, 0-100).
+  popcornScore Int @default(0)
+  viewCount    Int @default(0)
+
+  ratings     Rating[]
+  comments    Comment[]
+  channelRefs ChannelVideo[]
+  watchEvents WatchEvent[]
+
+  @@index([creatorId])
+  @@index([seriesId])
+  @@index([category])
+  @@index([createdAt])
+  @@index([popcornScore])
+}
+
+model Channel {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  emoji       String   @default("📺")
+  description String   @default("")
+  category    String   @default("mixed")
+  // Prebuilt channels have no owner and are curated by the platform.
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  isPrebuilt  Boolean  @default(false)
+  // "normal" | "surprise" (computed per-request) | "weekly" (mirror of weekly chart)
+  kind        String   @default("normal")
+  createdAt   DateTime @default(now())
+
+  videos    ChannelVideo[]
+  followers Follow[]
+
+  @@index([ownerId])
+}
+
+model ChannelVideo {
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  addedAt   DateTime @default(now())
+
+  @@id([channelId, videoId])
+  @@index([videoId])
+}
+
+model Rating {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  // "burnt" (not for me) | "popped" (liked it) | "butter" (loved it)
+  value     String
+  createdAt DateTime @default(now())
+
+  @@id([userId, videoId])
+  @@index([videoId, createdAt]) // weekly chart scans
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoId     String
+  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  text        String
+  // Optional timecode (seconds into the video) the comment is pinned to.
+  timecodeSec Int?
+  createdAt   DateTime @default(now())
+
+  @@index([videoId, timecodeSec])
+}
+
+model Friendship {
+  id          String   @id @default(cuid())
+  requesterId String
+  requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User     @relation("addressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  // "pending" | "accepted"
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
+}
+
+model Follow {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, channelId])
+  @@index([channelId])
+}
+
+model WatchEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  watchedAt DateTime @default(now())
+
+  @@index([userId, watchedAt])
+  @@index([videoId])
+}

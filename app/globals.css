@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/* Reely design tokens — warm minimal: off-white, one coral accent, popcorn
+   gold reserved for scores. 8px spacing grid, 16px radii, one soft shadow. */
+@theme {
+  --color-bg: #fafaf7;
+  --color-surface: #ffffff;
+  --color-line: #e8e6e1;
+  --color-ink: #1a1a1a;
+  --color-ink-soft: #5c5c5c;
+  --color-accent: #e8503a;
+  --color-accent-soft: #fdeeeb;
+  --color-gold: #f2b01e;
+  --color-gold-soft: #fdf3dd;
+  --color-good: #2e7d4f;
+  --radius-card: 16px;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 1.125rem; /* 18px base — readable for everyone */
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Big, obvious focus for keyboard users. */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom video scrubber. */
+input[type="range"].scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 24px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"].scrubber::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, #ffffff 35%, transparent);
+}
+input[type="range"].scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--color-accent);
+}
+input[type="range"].scrubber::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, #ffffff 35%, transparent);
+}
+input[type="range"].scrubber::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--color-accent);
+}
+
+/* Pop animation for the rating burst. */
+@keyframes pop-burst {
+  0% { transform: scale(0.6); opacity: 0; }
+  40% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pop-burst {
+  animation: pop-burst 350ms ease-out;
+}
+
+/* Sheet slide-up. */
+@keyframes sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.sheet-up {
+  animation: sheet-up 200ms ease-out;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
