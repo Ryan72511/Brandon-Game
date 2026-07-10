@@ -29,7 +29,21 @@ export const POST = withUser(async (user, req) => {
     return NextResponse.json({ ok: true, status: "accepted" });
   }
 
-  await prisma.friendship.create({ data: { requesterId: user.id, addresseeId: other.id } });
+  try {
+    await prisma.friendship.create({
+      data: {
+        requesterId: user.id,
+        addresseeId: other.id,
+        pairKey: [user.id, other.id].sort().join(":"),
+      },
+    });
+  } catch (err) {
+    // Concurrent mutual invites: the pairKey constraint caught the race.
+    if ((err as { code?: string }).code === "P2002") {
+      return jsonError("Request already sent.", 409);
+    }
+    throw err;
+  }
   return NextResponse.json({ ok: true, status: "pending" });
 });
 

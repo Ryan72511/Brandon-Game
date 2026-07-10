@@ -167,6 +167,9 @@ model Friendship {
   requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
   addresseeId String
   addressee   User     @relation("addressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  // Canonical pair key (sorted "idA:idB") — one row per pair regardless of
+  // who asked first, enforced by the database.
+  pairKey     String   @unique
   // "pending" | "accepted"
   status      String   @default("pending")
   createdAt   DateTime @default(now())

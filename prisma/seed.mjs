@@ -210,19 +210,20 @@ async function main() {
 
   console.log("Friends, follows, demo data…");
   const demo = users["demo"];
+  const befriend = (a, b, status) =>
+    prisma.friendship.create({
+      data: {
+        requesterId: a.id,
+        addresseeId: b.id,
+        pairKey: [a.id, b.id].sort().join(":"),
+        status,
+      },
+    });
   // Demo user: friends with two, one pending request waiting (to show the flow).
-  await prisma.friendship.create({
-    data: { requesterId: demo.id, addresseeId: users["grandma_rose"].id, status: "accepted" },
-  });
-  await prisma.friendship.create({
-    data: { requesterId: users["movie_mike"].id, addresseeId: demo.id, status: "accepted" },
-  });
-  await prisma.friendship.create({
-    data: { requesterId: users["binge_bee"].id, addresseeId: demo.id, status: "pending" },
-  });
-  await prisma.friendship.create({
-    data: { requesterId: users["sunny_sam"].id, addresseeId: users["grandma_rose"].id, status: "accepted" },
-  });
+  await befriend(demo, users["grandma_rose"], "accepted");
+  await befriend(users["movie_mike"], demo, "accepted");
+  await befriend(users["binge_bee"], demo, "pending");
+  await befriend(users["sunny_sam"], users["grandma_rose"], "accepted");
 
   // Demo user's own channel with a few saves — gives recommendations a taste.
   const demoChannel = await prisma.channel.create({

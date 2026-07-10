@@ -106,7 +106,10 @@ export default async function CreatorPage({
           {creator.series
             .filter((s) => s._count.videos > 0)
             .map((s) => {
-              const first = videos.find((v) => v.series?.id === s.id);
+              // Episode 1, not the newest upload — `videos` is recency-ordered.
+              const first = videos
+                .filter((v) => v.series?.id === s.id)
+                .sort((a, b) => (a.episodeNumber ?? 0) - (b.episodeNumber ?? 0))[0];
               return (
                 <Link
                   key={s.id}

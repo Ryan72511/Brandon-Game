@@ -43,13 +43,18 @@ export default function ChannelActions({
     try {
       if (navigator.share) {
         await navigator.share({ title: `${name} on Reely`, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1600);
+        return;
       }
     } catch {
-      /* cancelled */
+      return; // user cancelled the share sheet
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // No clipboard (e.g. non-HTTPS): show the link for manual copying.
+      window.prompt("Copy this link:", url);
     }
   }
 

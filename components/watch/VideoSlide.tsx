@@ -46,13 +46,18 @@ export default function VideoSlide({
     try {
       if (navigator.share) {
         await navigator.share({ title: video.title, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setShareDone(true);
-        setTimeout(() => setShareDone(false), 1600);
+        return;
       }
     } catch {
-      /* user cancelled */
+      return; // user cancelled the share sheet
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareDone(true);
+      setTimeout(() => setShareDone(false), 1600);
+    } catch {
+      // No clipboard (e.g. non-HTTPS): show the link for manual copying.
+      window.prompt("Copy this link:", url);
     }
   }
 
