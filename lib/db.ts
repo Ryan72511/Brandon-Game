@@ -15,5 +15,6 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 const walReady = (globalThis as unknown as { __walReady?: boolean });
 if (!walReady.__walReady) {
   walReady.__walReady = true;
-  prisma.$executeRawUnsafe("PRAGMA journal_mode=WAL;").catch(() => {});
+  // queryRaw, not executeRaw: PRAGMA returns a result row in SQLite.
+  prisma.$queryRawUnsafe("PRAGMA journal_mode=WAL;").catch(() => {});
 }

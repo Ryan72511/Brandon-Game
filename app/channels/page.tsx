@@ -21,10 +21,14 @@ export default async function ChannelsPage() {
         })
       : Promise.resolve([]),
     user
-      ? prisma.channel.findMany({
-          where: { followers: { some: { userId: user.id } }, ownerId: { not: user.id } },
-          include: { _count: { select: { videos: true } } },
-        })
+      ? prisma.channel
+          .findMany({
+            where: { followers: { some: { userId: user.id } } },
+            include: { _count: { select: { videos: true } } },
+          })
+          // Not a Prisma `not` filter: that would also drop ownerId=null
+          // (prebuilt) channels, since SQL NULL != x is never true.
+          .then((rows) => rows.filter((c) => c.ownerId !== user.id))
       : Promise.resolve([]),
     prisma.channel.findMany({
       where: { isPrebuilt: true },
