@@ -68,6 +68,8 @@ export default async function ChannelPage({
           category={channel.category}
           name={channel.name}
           emoji={channel.emoji}
+          customCategory={channel.customCategory}
+          coverUrl={channel.coverUrl}
           variant="wide"
         />
         {channel.description && <p className="text-night-ink-soft">{channel.description}</p>}

@@ -19,7 +19,15 @@ export default async function SurprisePage() {
     <WatchFeed
       videos={videos}
       signedIn={Boolean(user)}
-      myChannels={channels.map((c) => ({ id: c.id, name: c.name, emoji: c.emoji }))}
+      myChannels={channels.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        name: c.name,
+        emoji: c.emoji,
+        category: c.category,
+        customCategory: c.customCategory,
+        coverUrl: c.coverUrl,
+      }))}
       emptyMessage="The surprise machine is warming up — check back soon!"
     />
   );

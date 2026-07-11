@@ -1,37 +1,68 @@
 export const APP_NAME = "Reely";
 export const APP_TAGLINE = "Tiny shows. Big feelings.";
 
-// Content categories — the fixed vocabulary for videos and channels.
+// Genre taxonomy — the full base of categories for videos and channels.
+// People can also create their OWN category on a channel (category="custom"
+// + a label they name, represented by an emoji or an uploaded photo).
 export const CATEGORIES = [
   "comedy",
   "drama",
-  "motivation",
-  "mystery",
+  "romcom",
   "romance",
+  "horror",
   "thriller",
-  "food",
-  "animals",
-  "learning",
-  "travel",
+  "mystery",
+  "scifi",
+  "fantasy",
+  "action",
+  "adventure",
+  "animation",
+  "documentary",
+  "reality",
+  "sports",
   "music",
+  "gaming",
+  "food",
+  "travel",
+  "animals",
   "kids",
+  "learning",
+  "motivation",
+  "lifestyle",
+  "shorts",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   comedy: "Comedy",
   drama: "Drama",
-  motivation: "Motivation",
-  mystery: "Mystery",
+  romcom: "Rom-Com",
   romance: "Romance",
+  horror: "Horror",
   thriller: "Thriller",
-  food: "Food & Making",
-  animals: "Animals",
-  learning: "Learning",
-  travel: "Travel",
+  mystery: "Mystery",
+  scifi: "Sci-Fi",
+  fantasy: "Fantasy",
+  action: "Action",
+  adventure: "Adventure",
+  animation: "Animation",
+  documentary: "Documentary",
+  reality: "Reality",
+  sports: "Sports",
   music: "Music",
+  gaming: "Gaming",
+  food: "Food & Cooking",
+  travel: "Travel",
+  animals: "Animals",
   kids: "Kids",
+  learning: "Learning",
+  motivation: "Motivation",
+  lifestyle: "Lifestyle",
+  shorts: "Shorts",
 };
+
+// The sentinel category for make-your-own; the label lives on the channel.
+export const CUSTOM_CATEGORY = "custom";
 
 // Rating vocabulary — the Popcorn system.
 export const RATING_VALUES = ["burnt", "popped", "butter"] as const;

@@ -3,19 +3,66 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// Line-art tab icons matching the channel-tile mark system (no emoji).
+const TAB_ICONS: Record<string, React.ReactNode> = {
+  watch: <path d="m8 6 10 6-10 6V6Z" />,
+  channels: (
+    <>
+      <rect x="3" y="6.5" width="18" height="13" rx="2.5" />
+      <path d="m8.5 2.5 3.5 4 3.5-4" />
+    </>
+  ),
+  charts: (
+    <>
+      <path d="M7 4h10v6a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 15v3M8.5 21h7" />
+    </>
+  ),
+  you: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
+    </>
+  ),
+  studio: (
+    <>
+      <path d="m4 8 16-4 1 4L5 12l-1-4ZM5 12h14v8H5v-8Z" />
+    </>
+  ),
+  add: <path d="M12 5v14M5 12h14" />,
+};
+
+function TabIcon({ name }: { name: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      width={22}
+      height={22}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {TAB_ICONS[name]}
+    </svg>
+  );
+}
+
 // Bottom navigation. Watching mode: Watch / Channels / Charts / You.
 // Creating mode: Studio / Add Video / You. Icons always have text labels.
 const WATCHING_TABS = [
-  { href: "/", label: "Watch", icon: "▶" },
-  { href: "/channels", label: "Channels", icon: "📺" },
-  { href: "/charts", label: "Charts", icon: "🏆" },
-  { href: "/you", label: "You", icon: "🙂" },
+  { href: "/", label: "Watch", icon: "watch" },
+  { href: "/channels", label: "Channels", icon: "channels" },
+  { href: "/charts", label: "Charts", icon: "charts" },
+  { href: "/you", label: "You", icon: "you" },
 ];
 
 const CREATING_TABS = [
-  { href: "/studio", label: "Studio", icon: "🎬" },
-  { href: "/studio/upload", label: "Add video", icon: "＋" },
-  { href: "/you", label: "You", icon: "🙂" },
+  { href: "/studio", label: "Studio", icon: "studio" },
+  { href: "/studio/upload", label: "Add video", icon: "add" },
+  { href: "/you", label: "You", icon: "you" },
 ];
 
 export default function TabBar({
@@ -68,9 +115,7 @@ export default function TabBar({
                     : "text-ink-soft"
               }`}
             >
-              <span aria-hidden className="text-xl leading-none">
-                {tab.icon}
-              </span>
+              <TabIcon name={tab.icon} />
               {tab.label}
             </Link>
           );

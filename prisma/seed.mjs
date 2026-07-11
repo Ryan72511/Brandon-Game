@@ -226,12 +226,15 @@ async function main() {
   await befriend(users["sunny_sam"], users["grandma_rose"], "accepted");
 
   // Demo user's own channel with a few saves — gives recommendations a taste.
+  // A custom-category channel: the maker named their own genre.
   const demoChannel = await prisma.channel.create({
     data: {
       slug: "demo-feel-good-mix",
       name: "Feel Good Mix",
       emoji: "🌈",
       description: "Things that make the day better.",
+      category: "custom",
+      customCategory: "Feel Good",
       ownerId: demo.id,
     },
   });

@@ -182,10 +182,15 @@ export default function WatchFeed({
     });
     if (!res.ok) return null;
     const data = await res.json();
+    // Quick-created channels are custom-category with the default look.
     const channel: MyChannel = {
       id: data.channel.id,
+      slug: data.channel.slug,
       name: data.channel.name,
       emoji: data.channel.emoji,
+      category: "custom",
+      customCategory: "",
+      coverUrl: "",
     };
     setMyChannels((prev) => [...prev, channel]);
     return channel;

@@ -101,12 +101,27 @@ await step("channels page shows prebuilt lineup + my channels", async () => {
   await page.waitForSelector("text=The Laugh Track");
 });
 
-await step("create a channel from the channels page", async () => {
+await step("create a channel: pick a genre, get a suggested name", async () => {
   await page.click('button:has-text("New channel")');
-  await page.fill('input[placeholder^="Like"]', "E2E Test Channel");
+  await page.click('button:has-text("Comedy")');
+  // The name auto-suggests "<name>'s Comedy Channel" — override for a stable slug.
+  const nameInput = page.locator('input[placeholder^="Pick a category"]');
+  const suggested = await nameInput.inputValue();
+  if (!suggested.includes("Comedy")) throw new Error(`no auto-suggest, got "${suggested}"`);
+  await nameInput.fill("E2E Test Channel");
   await page.click('button:has-text("Create channel")');
   await page.waitForURL(/\/channel\/e2e-test-channel/);
   await page.waitForSelector("text=E2E Test Channel");
+});
+
+await step("create a custom-category channel with an emoji", async () => {
+  await page.goto(BASE + "/channels");
+  await page.click('button:has-text("New channel")');
+  await page.click('button:has-text("My own")');
+  await page.fill('input[placeholder^="Like"]', "Trick Shots");
+  await page.click('button:has-text("Create channel")');
+  await page.waitForURL(/\/channel\/.+trick-shots/);
+  await page.waitForSelector("text=Trick Shots");
 });
 
 await step("channel page: prebuilt channel plays all in context", async () => {

@@ -8,6 +8,8 @@ export default function ChannelTile({
   name,
   emoji,
   category,
+  customCategory,
+  coverUrl,
   caption,
   href,
   onLight = false,
@@ -16,6 +18,8 @@ export default function ChannelTile({
   name: string;
   emoji: string;
   category: string;
+  customCategory?: string;
+  coverUrl?: string;
   caption?: string;
   href?: string;
   // Set when the tile sits on a light page (e.g. creator profiles) so the
@@ -27,7 +31,15 @@ export default function ChannelTile({
       href={href ?? `/channel/${slug}`}
       className="group block transition duration-150 hover:-translate-y-0.5 active:scale-[0.97]"
     >
-      <ChannelLogo slug={slug} category={category} name={name} emoji={emoji} variant="tile" />
+      <ChannelLogo
+        slug={slug}
+        category={category}
+        name={name}
+        emoji={emoji}
+        customCategory={customCategory}
+        coverUrl={coverUrl}
+        variant="tile"
+      />
       {caption && (
         <span
           className={`mt-1.5 block text-center text-[13px] font-medium ${

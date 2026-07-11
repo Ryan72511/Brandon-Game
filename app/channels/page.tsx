@@ -2,7 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import ChannelTile from "@/components/ChannelTile";
-import ChannelLogo from "@/components/ChannelLogo";
+import ChannelLogo, { categoryLabel } from "@/components/ChannelLogo";
+import GenreIcon from "@/components/GenreIcon";
 import NewChannelButton from "@/components/NewChannelButton";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,11 @@ export default async function ChannelsPage() {
   const lineup = prebuilt.filter((c) => c.kind === "normal");
 
   const count = (n: number) => `${n} ${n === 1 ? "video" : "videos"}`;
+  // Tile caption: "Comedy · 5 videos" (or the maker's own category name).
+  const captionFor = (c: { category: string; customCategory: string }, n: number) => {
+    const label = categoryLabel(c.category, c.customCategory);
+    return label ? `${label} · ${count(n)}` : count(n);
+  };
 
   return (
     <div className="min-h-dvh">
@@ -67,8 +73,11 @@ export default async function ChannelsPage() {
             href="/surprise"
             className="hero-iridescent relative mt-4 flex aspect-[2/1] w-full items-center gap-4 overflow-hidden rounded-2xl px-5 ring-1 ring-inset ring-white/15 transition hover:-translate-y-0.5 active:scale-[0.98]"
           >
-            <span aria-hidden className="text-[64px] leading-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
-              {surprise.emoji}
+            <span
+              aria-hidden
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-inset ring-white/15"
+            >
+              <GenreIcon genre="surprise" size={38} className="text-white/95" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[26px] font-extrabold tracking-tight text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.35)]">
@@ -89,7 +98,7 @@ export default async function ChannelsPage() {
         <SectionHeader eyebrow="Your lineup" title="Your channels" />
         <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           {user ? (
-            <NewChannelButton variant="tile" />
+            <NewChannelButton variant="tile" displayName={user.displayName} />
           ) : (
             <Link
               href="/login?next=/channels"
@@ -110,7 +119,9 @@ export default async function ChannelsPage() {
               name={c.name}
               emoji={c.emoji}
               category={c.category}
-              caption={count(c._count.videos)}
+              customCategory={c.customCategory}
+              coverUrl={c.coverUrl}
+              caption={captionFor(c, c._count.videos)}
             />
           ))}
         </div>
@@ -127,7 +138,9 @@ export default async function ChannelsPage() {
                   name={c.name}
                   emoji={c.emoji}
                   category={c.category}
-                  caption={count(c._count.videos)}
+                  customCategory={c.customCategory}
+                  coverUrl={c.coverUrl}
+                  caption={captionFor(c, c._count.videos)}
                 />
               ))}
             </div>
@@ -164,7 +177,9 @@ export default async function ChannelsPage() {
               name={c.name}
               emoji={c.emoji}
               category={c.category}
-              caption={count(c._count.videos)}
+              customCategory={c.customCategory}
+              coverUrl={c.coverUrl}
+              caption={captionFor(c, c._count.videos)}
             />
           ))}
         </div>

@@ -102,6 +102,8 @@ export const CATEGORY_STYLE = {
   travel: ["48CAE4", "023E8A"],
   music: ["9D4EDD", "5A189A"],
   kids: ["FFD166", "06D6A0"],
+  horror: ["3A0A0A", "1A1A2E"],
+  shorts: ["F77F00", "D62828"],
 };
 
 export const SERIES = [
@@ -234,6 +236,20 @@ export const VIDEOS = [
     description: "Pots. Pans. One wooden spoon. Zero regrets.",
     backstory: "Biscuit the cat left the room in protest at 0:04. Watch for the tail." },
   // — Kids
+  // — Horror
+  { slug: "static-channel", title: "Channel 0", creator: "whodunit_wanda", category: "horror", tags: ["spooky", "found-footage"], dur: 13, quality: "great",
+    description: "There is a channel between channel 3 and channel 4. Do not watch it.",
+    backstory: "Shot on a real CRT from the thrift store. The static is genuine — we just pointed a camera at it and wrote what it seemed to be saying." },
+  { slug: "attic-knocks", title: "Three Knocks From The Attic", creator: "whodunit_wanda", category: "horror", tags: ["spooky", "house"], dur: 12, quality: "good",
+    description: "Nobody lives upstairs. The knocking disagrees.",
+    backstory: "My co-writer refused to film in her own attic, which honestly says everything." },
+  // — Shorts (blink and you miss it)
+  { slug: "one-second-sunrise", title: "Sunrise In Eight Seconds", creator: "daily_spark", category: "shorts", tags: ["calm", "timelapse"], dur: 8, quality: "good",
+    description: "A whole sunrise, compressed to a breath.",
+    backstory: "Four hours on a cold roof for eight seconds of gold. Fair trade." },
+  { slug: "toast-flip", title: "The Perfect Toast Flip", creator: "maya_makes", category: "shorts", tags: ["kitchen", "trickshot"], dur: 8, quality: "mixed",
+    description: "One flip. No cuts. Pure luck.",
+    backstory: "Take forty-one. The other forty live in my camera roll as a monument to hubris." },
   { slug: "sock-puppet-news", title: "Sock Puppet Evening News", creator: "pet_theater", category: "kids", tags: ["silly", "puppets"], dur: 10, quality: "good",
     description: "Tonight's top story: bedtime remains unfair.",
     backstory: "My kid wrote the headlines. I just held the socks." },
@@ -271,6 +287,10 @@ export const PREBUILT_CHANNELS = [
     description: "Street sounds and tiny concerts." },
   { slug: "kids-corner", name: "Kids Corner", emoji: "🧸", kind: "normal", category: "kids",
     description: "Silly little shows for little people." },
+  { slug: "midnight-static", name: "Midnight Static", emoji: "📺", kind: "normal", category: "horror",
+    description: "Lights off. Volume up. Good luck." },
+  { slug: "quick-hits", name: "Quick Hits", emoji: "⚡", kind: "normal", category: "shorts",
+    description: "Blink and you'll miss one. Ten-second wonders." },
 ];
 
 export const SEED_COMMENTS = [

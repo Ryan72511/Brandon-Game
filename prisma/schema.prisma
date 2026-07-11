@@ -108,7 +108,12 @@ model Channel {
   name        String
   emoji       String   @default("📺")
   description String   @default("")
-  category    String   @default("mixed")
+  // A genre key from lib/constants CATEGORIES, or "custom".
+  category    String   @default("custom")
+  // When category is "custom": the maker's own category name ("Cozy Vibes"),
+  // represented by `emoji` or an uploaded `coverUrl` photo.
+  customCategory String @default("")
+  coverUrl       String @default("")
   // Prebuilt channels have no owner and are curated by the platform.
   ownerId     String?
   owner       User?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)

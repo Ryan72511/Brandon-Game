@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Sheet from "./Sheet";
+import ChannelLogo from "@/components/ChannelLogo";
 import type { MyChannel } from "./types";
 
 // Save a video into one of your channels — or make a new channel right here.
@@ -51,9 +52,16 @@ export default function SaveSheet({
                 saved ? "border-accent bg-accent-soft" : "border-line bg-surface hover:bg-bg"
               }`}
             >
-              <span className="text-2xl" aria-hidden>
-                {ch.emoji}
-              </span>
+              <ChannelLogo
+                slug={ch.slug}
+                category={ch.category}
+                name={ch.name}
+                emoji={ch.emoji}
+                customCategory={ch.customCategory}
+                coverUrl={ch.coverUrl}
+                variant="avatar"
+                className="!h-11 !w-11"
+              />
               <span className="flex-1 font-semibold">{ch.name}</span>
               <span className={`font-bold ${saved ? "text-accent" : "text-ink-soft"}`}>
                 {saved ? "Saved ✓" : "Save"}
