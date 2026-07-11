@@ -131,9 +131,10 @@ export default async function ChannelPage({
             />
           ))
         )}
-        {hasMore && (
+        {hasMore && limit < 200 && (
           <Link
             href={`/channel/${channel.slug}?n=${limit + PAGE_SIZE}`}
+            scroll={false}
             className="min-h-12 rounded-xl bg-white/[0.08] py-3 text-center font-bold text-white ring-1 ring-inset ring-white/15"
           >
             Show more

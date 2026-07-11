@@ -13,20 +13,27 @@ export default async function HomePage() {
 
   // Continue watching: the latest unfinished videos lead the feed and
   // resume where they left off.
-  let continueIds: string[] = [];
+  const continueIds: string[] = [];
   if (user) {
+    // Latest event per video decides — a video finished yesterday must not
+    // resurface because of an older half-watched event.
     const recent = await prisma.watchEvent.findMany({
       where: {
         userId: user.id,
-        completed: false,
-        progressSec: { gt: 2 },
         watchedAt: { gte: new Date(Date.now() - 7 * 24 * 3600 * 1000) },
       },
       orderBy: { watchedAt: "desc" },
-      select: { videoId: true },
-      take: 20,
+      select: { videoId: true, completed: true, progressSec: true },
+      take: 60,
     });
-    continueIds = [...new Set(recent.map((r) => r.videoId))].slice(0, 4);
+    const decided = new Set<string>();
+    for (const r of recent) {
+      if (decided.has(r.videoId)) continue;
+      decided.add(r.videoId);
+      if (!r.completed && r.progressSec > 2 && continueIds.length < 4) {
+        continueIds.push(r.videoId);
+      }
+    }
   }
 
   const recs = user

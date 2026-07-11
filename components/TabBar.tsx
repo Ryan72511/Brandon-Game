@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -78,6 +79,23 @@ export default function TabBar({
   const pathname = usePathname();
   // The watch feed is immersive; the tab bar stays so people never get lost.
   const tabs = signedIn && mode === "creating" ? CREATING_TABS : WATCHING_TABS;
+
+  // The root layout doesn't re-render on client navigation, so the badge
+  // refreshes itself as you move around (SSR count is the seed).
+  const [unread, setUnread] = useState(unreadCount);
+  useEffect(() => {
+    if (!signedIn) return;
+    let cancelled = false;
+    fetch("/api/notifications?count=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data && typeof data.unread === "number") setUnread(data.unread);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, signedIn]);
   // Dark bar on dark screens: the storefront routes and the watch feeds
   // (home, /watch, /surprise all sit on a near-black canvas).
   const dark =
@@ -120,10 +138,12 @@ export default function TabBar({
             >
               <span className="relative">
                 <TabIcon name={tab.icon} />
-                {tab.href === "/you" && unreadCount > 0 && (
+                {tab.href === "/you" && unread > 0 && (
                   <span
-                    aria-label={`${unreadCount} unread notifications`}
-                    className="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-surface"
+                    aria-label={`${unread} unread notifications`}
+                    className={`absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-accent ring-2 ${
+                      dark ? "ring-[#0f1122]" : "ring-surface"
+                    }`}
                   />
                 )}
               </span>

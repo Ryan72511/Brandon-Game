@@ -111,10 +111,14 @@ export async function getFeedVideos(
       : Promise.resolve([]),
   ]);
 
+  // The LATEST event per video decides: if they finished it last time,
+  // there's nothing to resume — older half-watched events don't count.
   const progressMap = new Map<string, number>();
+  const decided = new Set<string>();
   for (const p of progress) {
-    // First row per video wins (desc order) — resume only mid-video.
-    if (!progressMap.has(p.videoId) && !p.completed && p.progressSec > 2) {
+    if (decided.has(p.videoId)) continue;
+    decided.add(p.videoId);
+    if (!p.completed && p.progressSec > 2) {
       progressMap.set(p.videoId, p.progressSec);
     }
   }

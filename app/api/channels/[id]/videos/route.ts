@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withUser, jsonError } from "@/lib/api";
 import { notifyMany } from "@/lib/notify";
+import { isPublicVideo } from "@/lib/visibility";
 
 type Params = [{ params: Promise<{ id: string }> }];
 
@@ -23,17 +24,32 @@ export const POST = withUser<Params>(async (user, req, { params }) => {
   if (!channel) return jsonError("That's not one of your channels.", 403);
   const video = await prisma.video.findUnique({
     where: { id: videoId },
-    select: { id: true, title: true },
+    select: { id: true, title: true, status: true, publishAt: true },
   });
   if (!video) return jsonError("Video not found.", 404);
+  // Unpublished videos can't be shared into channels — that would leak the
+  // title to followers and hand them a dead link.
+  if (!isPublicVideo(video)) {
+    return jsonError("That video isn't published yet.", 400);
+  }
 
-  await prisma.channelVideo.upsert({
+  const already = await prisma.channelVideo.findUnique({
     where: { channelId_videoId: { channelId: id, videoId } },
-    create: { channelId: id, videoId },
-    update: {},
+    select: { videoId: true },
   });
+  if (already) return NextResponse.json({ ok: true });
 
-  // Let followers know — never blocks or breaks the add itself.
+  try {
+    await prisma.channelVideo.create({ data: { channelId: id, videoId } });
+  } catch (err) {
+    // Concurrent double-tap: the other request won; nothing more to do.
+    if ((err as { code?: string }).code === "P2002") {
+      return NextResponse.json({ ok: true });
+    }
+    throw err;
+  }
+
+  // Let followers know — only on a genuinely new add.
   const followers = await prisma.follow.findMany({
     where: { channelId: id },
     select: { userId: true },

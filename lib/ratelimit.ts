@@ -33,7 +33,15 @@ export function allowRequest(key: string, limit: RateLimit): boolean {
   const capacity = limit.burst ?? limit.perMinute;
   let bucket = buckets.get(key);
   if (!bucket) {
-    if (buckets.size >= MAX_BUCKETS) buckets.clear(); // crude memory cap
+    if (buckets.size >= MAX_BUCKETS) {
+      // Evict the oldest tenth — never wipe active limits wholesale, or an
+      // attacker could flush the auth limiter by churning keys.
+      let evicted = 0;
+      for (const k of buckets.keys()) {
+        buckets.delete(k);
+        if (++evicted >= MAX_BUCKETS / 10) break;
+      }
+    }
     bucket = { tokens: capacity, refilledAt: now };
     buckets.set(key, bucket);
   }

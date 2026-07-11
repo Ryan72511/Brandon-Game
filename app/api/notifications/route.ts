@@ -3,7 +3,14 @@ import { prisma } from "@/lib/db";
 import { withUser, jsonError } from "@/lib/api";
 
 // GET — the user's latest 50 notifications, newest first.
-export const GET = withUser(async (user) => {
+// GET ?count=1 — just the unread count (the tab-bar badge polls this).
+export const GET = withUser(async (user, req) => {
+  if (new URL(req.url).searchParams.get("count")) {
+    const unread = await prisma.notification.count({
+      where: { userId: user.id, read: false },
+    });
+    return NextResponse.json({ unread });
+  }
   const rows = await prisma.notification.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },

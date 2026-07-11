@@ -59,7 +59,13 @@ export default function CommentsSheet({
     try {
       const res = await fetch(`/api/videos/${videoId}/comments?cursor=${nextCursor}`);
       const data = await res.json();
-      setComments((prev) => [...(prev ?? []), ...(data.comments ?? [])]);
+      // Dedupe by id: pin changes between pages can shift the ordering the
+      // cursor walks, and a freshly posted comment is already in the list.
+      setComments((prev) => {
+        const seen = new Set((prev ?? []).map((c) => c.id));
+        const fresh = (data.comments ?? []).filter((c: CommentDto) => !seen.has(c.id));
+        return [...(prev ?? []), ...fresh];
+      });
       setNextCursor(data.nextCursor ?? null);
     } finally {
       setLoadingMore(false);
