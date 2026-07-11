@@ -93,7 +93,9 @@ export default function ChannelLogo(props: ChannelLogoProps) {
   // keeps the wordmark readable.
   const surface: React.CSSProperties = photo
     ? {
-        backgroundImage: `linear-gradient(180deg, rgba(10,10,18,0.15) 30%, rgba(10,10,18,0.78) 100%), url(${JSON.stringify(coverUrl)})`,
+        // Heavy bottom scrim: the wordmark must stay readable over any
+        // photo, including near-white ones.
+        backgroundImage: `linear-gradient(180deg, rgba(10,10,18,0.20) 0%, rgba(10,10,18,0.60) 45%, rgba(10,10,18,0.85) 100%), url(${JSON.stringify(coverUrl)})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }

@@ -44,9 +44,11 @@ export default function NewChannelButton({
         : (CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS] ?? "");
     if (!label) return;
     const owner = displayName.trim() || "My";
-    setName(
-      `${owner.endsWith("s") ? `${owner}'` : `${owner}'s`} ${label} Channel`.slice(0, 40)
-    );
+    const possessive = owner.toLowerCase().endsWith("s") ? `${owner}'` : `${owner}'s`;
+    // Fit inside 40 chars without cutting mid-word: drop " Channel", then
+    // fall back to just the label.
+    const candidates = [`${possessive} ${label} Channel`, `${possessive} ${label}`, label];
+    setName(candidates.find((c) => c.length <= 40) ?? label.slice(0, 40));
   }
 
   function pickCover(f: File | null) {
@@ -64,6 +66,10 @@ export default function NewChannelButton({
     }
     if (isCustom && !customCategory.trim()) {
       setError("Name your category — it can be anything.");
+      return;
+    }
+    if (isCustom && customLook === "photo" && !cover) {
+      setError("Pick a photo — or switch to an emoji instead.");
       return;
     }
     setBusy(true);
@@ -116,6 +122,22 @@ export default function NewChannelButton({
             <fieldset>
               <legend className="mb-2 font-semibold">What kind of channel?</legend>
               <div className="grid max-h-56 grid-cols-3 gap-2 overflow-y-auto pr-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategory(CUSTOM_CATEGORY);
+                    suggestName(CUSTOM_CATEGORY, customCategory);
+                  }}
+                  aria-pressed={isCustom}
+                  className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-dashed px-1 text-[13px] font-semibold ${
+                    isCustom ? "border-accent bg-accent-soft" : "border-line bg-surface"
+                  }`}
+                >
+                  <span aria-hidden className="text-lg leading-none">
+                    ＋
+                  </span>
+                  My own
+                </button>
                 {CATEGORIES.map((c) => (
                   <button
                     key={c}
@@ -133,22 +155,6 @@ export default function NewChannelButton({
                     {CATEGORY_LABELS[c]}
                   </button>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCategory(CUSTOM_CATEGORY);
-                    suggestName(CUSTOM_CATEGORY, customCategory);
-                  }}
-                  aria-pressed={isCustom}
-                  className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-dashed px-1 text-[13px] font-semibold ${
-                    isCustom ? "border-accent bg-accent-soft" : "border-line bg-surface"
-                  }`}
-                >
-                  <span aria-hidden className="text-lg leading-none">
-                    ＋
-                  </span>
-                  My own
-                </button>
               </div>
             </fieldset>
 
@@ -167,11 +173,10 @@ export default function NewChannelButton({
                     className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
                   />
                 </label>
-                <div className="flex gap-2" role="tablist" aria-label="Category look">
+                <div className="flex gap-2">
                   <button
                     type="button"
-                    role="tab"
-                    aria-selected={customLook === "emoji"}
+                    aria-pressed={customLook === "emoji"}
                     onClick={() => setCustomLook("emoji")}
                     className={`min-h-12 flex-1 rounded-full font-bold ${
                       customLook === "emoji" ? "bg-accent text-white" : "border-2 border-line bg-surface"
@@ -181,8 +186,7 @@ export default function NewChannelButton({
                   </button>
                   <button
                     type="button"
-                    role="tab"
-                    aria-selected={customLook === "photo"}
+                    aria-pressed={customLook === "photo"}
                     onClick={() => setCustomLook("photo")}
                     className={`min-h-12 flex-1 rounded-full font-bold ${
                       customLook === "photo" ? "bg-accent text-white" : "border-2 border-line bg-surface"

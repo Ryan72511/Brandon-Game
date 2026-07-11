@@ -9,7 +9,7 @@ import { randomBytes } from "node:crypto";
 
 export const MEDIA_ROOT = path.join(process.cwd(), "media");
 
-const EXT_ALLOWLIST = new Set(["mp4", "webm", "mov", "m4v", "jpg", "jpeg", "png", "webp"]);
+const EXT_ALLOWLIST = new Set(["mp4", "webm", "mov", "m4v", "jpg", "jpeg", "png", "webp", "gif"]);
 
 // Everything user-uploaded (videos AND their poster frames) lands in
 // media/uploads — gitignored, unlike the committed seed media.
@@ -36,4 +36,5 @@ export const MIME_BY_EXT: Record<string, string> = {
   ".jpeg": "image/jpeg",
   ".png": "image/png",
   ".webp": "image/webp",
+  ".gif": "image/gif",
 };

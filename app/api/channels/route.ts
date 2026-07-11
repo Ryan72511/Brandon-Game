@@ -61,13 +61,22 @@ export const POST = withUser(async (user, req) => {
 
   let coverUrl = "";
   if (input.cover) {
-    if (!input.cover.type.startsWith("image/")) {
-      return jsonError("The category photo must be an image.", 400);
+    // Extension comes from the MIME type, not the filename — extensionless
+    // or exotic files get a friendly error instead of a 500. SVG is
+    // deliberately excluded (scriptable when served inline).
+    const EXT_BY_MIME: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/gif": "gif",
+    };
+    const ext = EXT_BY_MIME[input.cover.type];
+    if (!ext) {
+      return jsonError("Use a JPG, PNG, WebP, or GIF photo.", 400);
     }
     if (input.cover.size > 8 * 1024 * 1024) {
       return jsonError("Category photos can be up to 8 MB.", 400);
     }
-    const ext = (input.cover.name.split(".").pop() || "jpg").toLowerCase();
     const buffer = Buffer.from(await input.cover.arrayBuffer());
     const saved = await saveUpload(buffer, ext, "uploads");
     coverUrl = saved.url;
