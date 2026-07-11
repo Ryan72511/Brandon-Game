@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Set up database
+        run: |
+          echo 'DATABASE_URL="file:./dev.db"' > .env
+          npx prisma db push
+      - name: Seed (committed media, no ffmpeg needed)
+        run: npm run seed
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
+      - name: Install Chromium for e2e
+        run: |
+          npm i -D --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Run e2e flows
+        run: |
+          npm start -- --port 3100 &
+          npx wait-on http://localhost:3100 --timeout 30000 || sleep 8
+          export CHROMIUM_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          node tests/e2e/flows.test.mjs http://localhost:3100

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createSession, hashPassword } from "@/lib/session";
-import { jsonError, cleanString } from "@/lib/api";
+import { jsonError, cleanString, rateLimitByIp } from "@/lib/api";
 import { AVATAR_COLORS, AVATAR_EMOJI } from "@/lib/constants";
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
 export async function POST(req: Request) {
+  const limited = rateLimitByIp(req);
+  if (limited) return limited;
   const body = await req.json().catch(() => ({}));
   const username = cleanString(body.username, 20).toLowerCase();
   const displayName = cleanString(body.displayName, 40) || username;

@@ -39,8 +39,10 @@ export async function destroySession(): Promise<void> {
   jar.delete(SESSION_COOKIE);
 }
 
+const SESSION_MAX_AGE_MS = 365 * 24 * 3600 * 1000;
+
 // Deduplicated per request via react cache() — layouts and pages can both
-// call this without double-querying.
+// call this without double-querying. Expired sessions are deleted lazily.
 export const getCurrentUser = cache(async () => {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
@@ -49,7 +51,12 @@ export const getCurrentUser = cache(async () => {
     where: { token },
     include: { user: true },
   });
-  return session?.user ?? null;
+  if (!session) return null;
+  if (Date.now() - session.createdAt.getTime() > SESSION_MAX_AGE_MS) {
+    await prisma.session.delete({ where: { token } }).catch(() => {});
+    return null;
+  }
+  return session.user;
 });
 
 export async function requireUser() {

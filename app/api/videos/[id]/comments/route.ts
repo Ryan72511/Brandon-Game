@@ -4,24 +4,34 @@ import { withUser, jsonError, cleanString } from "@/lib/api";
 
 type Params = [{ params: Promise<{ id: string }> }];
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+const PAGE_SIZE = 30;
+
+// Cursor-paginated: pinned comment first, then newest-first. Pass ?cursor=
+// (last comment id from the previous page) for the next page.
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const cursor = new URL(req.url).searchParams.get("cursor");
   const comments = await prisma.comment.findMany({
     where: { videoId: id },
-    orderBy: [{ createdAt: "desc" }],
-    take: 200,
+    orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
       user: { select: { username: true, displayName: true, avatarEmoji: true, avatarColor: true } },
     },
   });
+  const hasMore = comments.length > PAGE_SIZE;
+  const page = hasMore ? comments.slice(0, PAGE_SIZE) : comments;
   return NextResponse.json({
-    comments: comments.map((c) => ({
+    comments: page.map((c) => ({
       id: c.id,
       text: c.text,
       timecodeSec: c.timecodeSec,
+      pinned: c.pinned,
       createdAt: c.createdAt.toISOString(),
       user: c.user,
     })),
+    nextCursor: hasMore ? page[page.length - 1].id : null,
   });
 }
 

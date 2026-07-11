@@ -3,6 +3,8 @@
 // the production swap (pgvector embeddings + ANN) keeps this interface.
 import { prisma } from "@/lib/db";
 import { parseTags } from "@/lib/format";
+import { publicVideoWhere } from "@/lib/visibility";
+import { CATEGORY_LABELS, type Category } from "@/lib/constants";
 
 type CandidateVideo = {
   id: string;
@@ -17,6 +19,30 @@ const SAVE_WEIGHT = 3;
 const LOVE_WEIGHT = 2; // rated popped/butter
 const WATCH_WEIGHT = 1;
 const CANDIDATE_CAP = 2000;
+
+// The candidate pool is identical for every user — cache it briefly so the
+// home feed doesn't rescan the Video table on every request.
+const CANDIDATE_TTL_MS = 60_000;
+let candidateCache: { at: number; rows: CandidateVideo[] } | null = null;
+
+async function getCandidates(): Promise<CandidateVideo[]> {
+  if (candidateCache && Date.now() - candidateCache.at < CANDIDATE_TTL_MS) {
+    return candidateCache.rows;
+  }
+  const rows = await prisma.video.findMany({
+    where: publicVideoWhere(),
+    select: { id: true, category: true, tags: true, popcornScore: true, viewCount: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+    take: CANDIDATE_CAP,
+  });
+  candidateCache = { at: Date.now(), rows };
+  return rows;
+}
+
+// New uploads should appear without waiting out the TTL.
+export function invalidateCandidateCache() {
+  candidateCache = null;
+}
 
 // FNV-1a — a tiny deterministic hash for the daily Surprise Me shuffle seed.
 export function fnv1a(str: string): number {
@@ -109,10 +135,33 @@ function scoreCandidate(taste: Map<string, number>, v: CandidateVideo, now: numb
   return tasteScore + quality + popularity + freshBoost;
 }
 
+// A short human reason for why a video was recommended — the strongest
+// taste signal it matched ("Because you like Comedy").
+function reasonFor(taste: Map<string, number>, v: CandidateVideo): string {
+  let best = "";
+  let bestWeight = 0;
+  const keys = [v.category, ...parseTags(v.tags)];
+  for (const k of keys) {
+    const w = taste.get(k) ?? 0;
+    if (w > bestWeight) {
+      bestWeight = w;
+      best = k;
+    }
+  }
+  if (!best) return "";
+  const label = CATEGORY_LABELS[best as Category];
+  return label ? `Because you like ${label}` : `Because you like #${best}`;
+}
+
+export interface Recommendation {
+  id: string;
+  reason: string;
+}
+
 export async function recommendForUser(
   userId: string | null,
   opts: { excludeVideoIds?: string[]; limit?: number } = {}
-): Promise<string[]> {
+): Promise<Recommendation[]> {
   const limit = opts.limit ?? 20;
   const taste = userId ? await buildTasteVector(userId) : new Map<string, number>();
 
@@ -127,31 +176,28 @@ export async function recommendForUser(
     ...recentlyWatched.map((w) => w.videoId),
   ]);
 
-  const candidates = await prisma.video.findMany({
-    select: { id: true, category: true, tags: true, popcornScore: true, viewCount: true, createdAt: true },
-    orderBy: { createdAt: "desc" },
-    take: CANDIDATE_CAP,
-  });
+  const candidates = await getCandidates();
 
   const now = Date.now();
   const scored = candidates
     .filter((c) => !exclude.has(c.id))
-    .map((c) => ({ id: c.id, score: scoreCandidate(taste, c, now) }))
+    .map((c) => ({ id: c.id, score: scoreCandidate(taste, c, now), reason: reasonFor(taste, c) }))
     .sort((a, b) => b.score - a.score);
 
   // If excluding watched videos leaves too few, backfill with watched ones —
   // an empty feed is worse than a rewatch.
-  const ids = scored.slice(0, limit).map((s) => s.id);
-  if (ids.length < limit) {
+  const out = scored.slice(0, limit).map((s) => ({ id: s.id, reason: s.reason }));
+  if (out.length < limit) {
+    const have = new Set(out.map((o) => o.id));
     const backfill = candidates
-      .filter((c) => !ids.includes(c.id) && !(opts.excludeVideoIds ?? []).includes(c.id))
-      .map((c) => ({ id: c.id, score: scoreCandidate(taste, c, now) }))
+      .filter((c) => !have.has(c.id) && !(opts.excludeVideoIds ?? []).includes(c.id))
+      .map((c) => ({ id: c.id, score: scoreCandidate(taste, c, now), reason: reasonFor(taste, c) }))
       .sort((a, b) => b.score - a.score)
-      .slice(0, limit - ids.length)
-      .map((s) => s.id);
-    ids.push(...backfill);
+      .slice(0, limit - out.length)
+      .map((s) => ({ id: s.id, reason: s.reason }));
+    out.push(...backfill);
   }
-  return ids;
+  return out;
 }
 
 // Recommendations to grow a channel: same scorer, channel-derived taste,
@@ -162,11 +208,7 @@ export async function recommendForChannel(channelId: string, limit = 12): Promis
     prisma.channelVideo.findMany({ where: { channelId }, select: { videoId: true } }),
   ]);
   const exclude = new Set(existing.map((e) => e.videoId));
-  const candidates = await prisma.video.findMany({
-    select: { id: true, category: true, tags: true, popcornScore: true, viewCount: true, createdAt: true },
-    orderBy: { createdAt: "desc" },
-    take: CANDIDATE_CAP,
-  });
+  const candidates = await getCandidates();
   const now = Date.now();
   return candidates
     .filter((c) => !exclude.has(c.id))
@@ -185,12 +227,13 @@ export async function surpriseMe(userId: string | null, limit = 20): Promise<str
 
   const [quality, fresh] = await Promise.all([
     prisma.video.findMany({
-      where: { popcornScore: { gte: 55 } },
+      where: { ...publicVideoWhere(), popcornScore: { gte: 55 } },
       select: { id: true },
       orderBy: { popcornScore: "desc" },
       take: 200,
     }),
     prisma.video.findMany({
+      where: publicVideoWhere(),
       select: { id: true },
       orderBy: { createdAt: "desc" },
       take: 50,

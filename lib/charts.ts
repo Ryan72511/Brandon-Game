@@ -7,6 +7,7 @@ import {
   SCORE_PRIOR_WEIGHT_WEEKLY,
   SCORE_PRIOR_WEIGHT_ALL_TIME,
 } from "@/lib/constants";
+import { publicVideoWhere } from "@/lib/visibility";
 
 export interface ChartRow {
   videoId: string;
@@ -23,7 +24,7 @@ const MIN_ALL_TIME_RATINGS = 5;
 async function computeWeekly(limit: number): Promise<ChartRow[]> {
   const since = new Date(Date.now() - 7 * 24 * 3600 * 1000);
   const ratings = await prisma.rating.findMany({
-    where: { createdAt: { gte: since } },
+    where: { createdAt: { gte: since }, video: publicVideoWhere() },
     select: { videoId: true, value: true },
   });
   const byVideo = new Map<string, { fresh: number; total: number }>();
@@ -49,6 +50,7 @@ async function computeAllTime(limit: number): Promise<ChartRow[]> {
   // Over-fetch generously: the min-ratings filter runs after this cut, and
   // high-score/low-rating videos would otherwise crowd out qualifiers.
   const videos = await prisma.video.findMany({
+    where: publicVideoWhere(),
     select: { id: true, popcornScore: true, burntCount: true, poppedCount: true, butterCount: true },
     orderBy: { popcornScore: "desc" },
     take: limit * 25,

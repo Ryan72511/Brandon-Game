@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getFeedVideos } from "@/lib/data";
 import { recommendForChannel } from "@/lib/recs";
 import { getChart } from "@/lib/charts";
+import { publicVideoWhere } from "@/lib/visibility";
 import PageHeader from "@/components/PageHeader";
 import VideoCard from "@/components/VideoCard";
 import ChannelActions from "@/components/ChannelActions";
@@ -13,12 +14,19 @@ import AddToChannelButton from "@/components/AddToChannelButton";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 24;
+
 export default async function ChannelPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ n?: string }>;
 }) {
   const { slug } = await params;
+  const { n } = await searchParams;
+  // "Show more" grows the window; capped to keep the page bounded.
+  const limit = Math.min(Math.max(parseInt(n ?? "", 10) || PAGE_SIZE, PAGE_SIZE), 200);
   const user = await getCurrentUser();
 
   const channel = await prisma.channel.findUnique({
@@ -37,12 +45,15 @@ export default async function ChannelPage({
     videoIds = (await getChart("weekly", 20)).map((r) => r.videoId);
   } else {
     const rows = await prisma.channelVideo.findMany({
-      where: { channelId: channel.id },
+      where: { channelId: channel.id, video: publicVideoWhere() },
       orderBy: { addedAt: "desc" },
       select: { videoId: true },
+      take: limit + 1,
     });
     videoIds = rows.map((r) => r.videoId);
   }
+  const hasMore = videoIds.length > limit;
+  videoIds = videoIds.slice(0, limit);
 
   const isOwner = Boolean(user && channel.ownerId === user.id);
   const [videos, following, recIds] = await Promise.all([
@@ -119,6 +130,14 @@ export default async function ChannelPage({
               dark
             />
           ))
+        )}
+        {hasMore && (
+          <Link
+            href={`/channel/${channel.slug}?n=${limit + PAGE_SIZE}`}
+            className="min-h-12 rounded-xl bg-white/[0.08] py-3 text-center font-bold text-white ring-1 ring-inset ring-white/15"
+          >
+            Show more
+          </Link>
         )}
       </section>
 

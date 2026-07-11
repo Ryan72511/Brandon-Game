@@ -53,16 +53,20 @@ export default async function WatchPage({
       const start = seriesIds.indexOf(id);
       ids = start >= 0 ? [...seriesIds.slice(start), ...seriesIds.slice(0, start)] : [id, ...seriesIds];
     }
-  } else {
+  }
+
+  let reasons = new Map<string, string>();
+  if (!ch && !series) {
     const recs = await recommendForUser(user?.id ?? null, {
       excludeVideoIds: [id],
       limit: 19,
     });
-    ids = [id, ...recs];
+    ids = [id, ...recs.map((r) => r.id)];
+    reasons = new Map(recs.filter((r) => r.reason).map((r) => [r.id, r.reason]));
   }
 
   const [videos, channels] = await Promise.all([
-    getFeedVideos(ids, user?.id ?? null),
+    getFeedVideos(ids, user?.id ?? null, { reasons }),
     user ? getMyChannels(user.id) : Promise.resolve([]),
   ]);
 

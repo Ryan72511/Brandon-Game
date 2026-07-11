@@ -3,7 +3,10 @@
 // The production swap is S3/R2 presigned uploads + CDN — only this file and
 // the /media route change; every stored URL keeps working because callers
 // only ever see the returned `url`.
+import { createWriteStream } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
+import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 
@@ -24,6 +27,25 @@ export async function saveUpload(
   const dir = path.join(MEDIA_ROOT, kind);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, name), buffer);
+  return { url: `/media/${kind}/${name}` };
+}
+
+// Streams a File to disk instead of buffering it — for big video uploads
+// this halves peak memory (no second full copy of the file in a Buffer).
+export async function saveUploadStream(
+  file: File,
+  ext: string,
+  kind: "uploads" = "uploads"
+): Promise<{ url: string }> {
+  const safeExt = ext.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!EXT_ALLOWLIST.has(safeExt)) throw new Error(`Unsupported file type: ${ext}`);
+  const name = `${Date.now()}-${randomBytes(8).toString("hex")}.${safeExt}`;
+  const dir = path.join(MEDIA_ROOT, kind);
+  await mkdir(dir, { recursive: true });
+  await pipeline(
+    Readable.fromWeb(file.stream() as import("node:stream/web").ReadableStream),
+    createWriteStream(path.join(dir, name))
+  );
   return { url: `/media/${kind}/${name}` };
 }
 

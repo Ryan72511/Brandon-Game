@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db";
 import { scoreDisplay, type ScoreDisplay } from "@/lib/score";
 import { parseTags } from "@/lib/format";
+import { isPublicVideo } from "@/lib/visibility";
 
 export interface FeedVideo {
   id: string;
@@ -29,6 +30,12 @@ export interface FeedVideo {
   nextEpisodeId: string | null;
   myRating: string | null; // "burnt" | "popped" | "butter" | null
   savedInChannelIds: string[]; // current user's channels containing this video
+  captionsVtt: string;
+  status: string; // "draft" | "published"
+  // Why this video was recommended, when it came from the recommender.
+  reason?: string;
+  // Resume position for the current user (Continue Watching).
+  resumeAtSec?: number;
 }
 
 const feedInclude = {
@@ -50,10 +57,11 @@ type FeedRow = NonNullable<
 
 export async function getFeedVideos(
   videoIds: string[],
-  currentUserId: string | null
+  currentUserId: string | null,
+  opts: { reasons?: Map<string, string> } = {}
 ): Promise<FeedVideo[]> {
   if (videoIds.length === 0) return [];
-  const [videos, myRatings, mySaves, nextEpisodes] = await Promise.all([
+  const [videos, myRatings, mySaves, nextEpisodes, progress] = await Promise.all([
     prisma.video.findMany({ where: { id: { in: videoIds } }, include: feedInclude }),
     currentUserId
       ? prisma.rating.findMany({
@@ -67,24 +75,49 @@ export async function getFeedVideos(
           select: { videoId: true, channelId: true },
         })
       : Promise.resolve([]),
+    // Next-episode lookup, batched: one query for every involved series.
     (async () => {
       const withSeries = await prisma.video.findMany({
         where: { id: { in: videoIds }, seriesId: { not: null } },
         select: { id: true, seriesId: true, episodeNumber: true },
       });
-      const pairs = await Promise.all(
-        withSeries.map(async (v) => {
-          const next = await prisma.video.findFirst({
-            where: { seriesId: v.seriesId, episodeNumber: { gt: v.episodeNumber ?? 0 } },
-            orderBy: { episodeNumber: "asc" },
-            select: { id: true },
-          });
+      if (withSeries.length === 0) return new Map<string, string | null>();
+      const seriesIds = [...new Set(withSeries.map((v) => v.seriesId!))];
+      const episodes = await prisma.video.findMany({
+        where: { seriesId: { in: seriesIds }, status: "published" },
+        orderBy: { episodeNumber: "asc" },
+        select: { id: true, seriesId: true, episodeNumber: true },
+      });
+      const bySeries = new Map<string, { id: string; episodeNumber: number | null }[]>();
+      for (const e of episodes) {
+        bySeries.set(e.seriesId!, [...(bySeries.get(e.seriesId!) ?? []), e]);
+      }
+      return new Map(
+        withSeries.map((v) => {
+          const next = (bySeries.get(v.seriesId!) ?? []).find(
+            (e) => (e.episodeNumber ?? 0) > (v.episodeNumber ?? 0)
+          );
           return [v.id, next?.id ?? null] as const;
         })
       );
-      return new Map(pairs);
     })(),
+    // Latest watch progress per video for resume.
+    currentUserId
+      ? prisma.watchEvent.findMany({
+          where: { userId: currentUserId, videoId: { in: videoIds } },
+          orderBy: { watchedAt: "desc" },
+          select: { videoId: true, progressSec: true, completed: true },
+        })
+      : Promise.resolve([]),
   ]);
+
+  const progressMap = new Map<string, number>();
+  for (const p of progress) {
+    // First row per video wins (desc order) — resume only mid-video.
+    if (!progressMap.has(p.videoId) && !p.completed && p.progressSec > 2) {
+      progressMap.set(p.videoId, p.progressSec);
+    }
+  }
 
   const ratingMap = new Map(myRatings.map((r) => [r.videoId, r.value]));
   const savesMap = new Map<string, string[]>();
@@ -93,10 +126,12 @@ export async function getFeedVideos(
   }
 
   const byId = new Map(videos.map((v) => [v.id, v]));
-  // Preserve the caller's ordering (recs/charts order matters).
+  // Preserve the caller's ordering (recs/charts order matters). Drafts and
+  // scheduled videos are visible only to their creator.
   return videoIds
     .map((id) => byId.get(id))
     .filter((v): v is FeedRow => Boolean(v))
+    .filter((v) => isPublicVideo(v) || v.creatorId === currentUserId)
     .map((v) => ({
       id: v.id,
       title: v.title,
@@ -123,6 +158,10 @@ export async function getFeedVideos(
       nextEpisodeId: nextEpisodes.get(v.id) ?? null,
       myRating: ratingMap.get(v.id) ?? null,
       savedInChannelIds: savesMap.get(v.id) ?? [],
+      captionsVtt: v.captionsVtt,
+      status: v.status,
+      reason: opts.reasons?.get(v.id),
+      resumeAtSec: progressMap.get(v.id),
     }));
 }
 

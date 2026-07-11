@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { getFeedVideos } from "@/lib/data";
 import { parseTags } from "@/lib/format";
+import { publicVideoWhere } from "@/lib/visibility";
 import PageHeader from "@/components/PageHeader";
 import Avatar from "@/components/Avatar";
 import VideoCard from "@/components/VideoCard";
@@ -36,11 +37,17 @@ export default async function CreatorPage({
   });
   if (!creator) notFound();
 
+  // Public visitors see published videos only; the creator sees everything
+  // (their studio handles drafts, but their page shouldn't hide them from
+  // themselves).
   const videoRows = await prisma.video.findMany({
-    where: { creatorId: creator.id },
+    where: {
+      creatorId: creator.id,
+      ...(viewer?.id === creator.id ? {} : publicVideoWhere()),
+    },
     orderBy: { createdAt: "desc" },
     select: { id: true },
-    take: 50,
+    take: 24,
   });
   const videos = await getFeedVideos(
     videoRows.map((v) => v.id),

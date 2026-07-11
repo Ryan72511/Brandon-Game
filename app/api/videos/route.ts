@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withUser, jsonError, cleanString } from "@/lib/api";
-import { saveUpload } from "@/lib/storage";
+import { LIMITS } from "@/lib/ratelimit";
+import { saveUpload, saveUploadStream } from "@/lib/storage";
 import { CATEGORIES, MAX_UPLOAD_BYTES, MAX_VIDEO_SECONDS } from "@/lib/constants";
 
 // Creating-mode upload. The browser extracts duration + a poster frame
@@ -37,8 +38,7 @@ export const POST = withUser(async (user, req) => {
     : 60;
 
   const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
-  const videoBuffer = Buffer.from(await file.arrayBuffer());
-  const { url: src } = await saveUpload(videoBuffer, ext, "uploads");
+  const { url: src } = await saveUploadStream(file, ext, "uploads");
 
   let thumb = "/poster-fallback.svg";
   if (poster instanceof File && poster.size > 0) {
@@ -86,4 +86,4 @@ export const POST = withUser(async (user, req) => {
   });
 
   return NextResponse.json({ ok: true, videoId: video.id });
-});
+}, LIMITS.upload);

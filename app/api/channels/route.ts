@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withUser, jsonError, cleanString } from "@/lib/api";
+import { LIMITS } from "@/lib/ratelimit";
 import { saveUpload } from "@/lib/storage";
 import { CATEGORIES, CUSTOM_CATEGORY } from "@/lib/constants";
 
@@ -120,4 +121,4 @@ export const POST = withUser(async (user, req) => {
     ok: true,
     channel: { id: channel.id, slug: channel.slug, name: channel.name, emoji: channel.emoji },
   });
-});
+}, LIMITS.upload);

@@ -9,11 +9,13 @@ export const dynamic = "force-dynamic";
 // the daily Surprise Me mix — watching needs no account.
 export default async function HomePage() {
   const user = await getCurrentUser();
-  let ids = user ? await recommendForUser(user.id, { limit: 20 }) : await surpriseMe(null, 20);
+  const recs = user ? await recommendForUser(user.id, { limit: 20 }) : [];
+  let ids = recs.map((r) => r.id);
+  const reasons = new Map(recs.filter((r) => r.reason).map((r) => [r.id, r.reason]));
   if (ids.length === 0) ids = await surpriseMe(user?.id ?? null, 20);
 
   const [videos, channels] = await Promise.all([
-    getFeedVideos(ids, user?.id ?? null),
+    getFeedVideos(ids, user?.id ?? null, { reasons }),
     user ? getMyChannels(user.id) : Promise.resolve([]),
   ]);
 

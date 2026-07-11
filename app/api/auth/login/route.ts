@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createSession, verifyPassword } from "@/lib/session";
-import { jsonError, cleanString } from "@/lib/api";
+import { jsonError, cleanString, rateLimitByIp } from "@/lib/api";
 
 export async function POST(req: Request) {
+  const limited = rateLimitByIp(req);
+  if (limited) return limited;
   const body = await req.json().catch(() => ({}));
   const username = cleanString(body.username, 20).toLowerCase();
   const password = typeof body.password === "string" ? body.password : "";

@@ -39,6 +39,7 @@ model User {
   sentFriend    Friendship[] @relation("requester")
   gotFriend     Friendship[] @relation("addressee")
   sessions      Session[]
+  notifications Notification[]
 }
 
 model Session {
@@ -77,8 +78,14 @@ model Video {
   src         String // /videos/xxx.mp4 locally; object-storage/CDN URL in prod
   thumb       String // poster image URL
   durationSec Int
-  category    String // one of lib/validate.ts CATEGORIES
+  category    String // one of lib/constants CATEGORIES
   tags        String   @default("") // JSON array of strings
+  // "draft" videos are visible only to their creator; "published" +
+  // publishAt<=now (or null) is public. Scheduled publishing = future date.
+  status      String    @default("published")
+  publishAt   DateTime?
+  // WebVTT captions (empty = none). Served to the player as a Blob track.
+  captionsVtt String   @default("")
   createdAt   DateTime @default(now())
 
   // Denormalized rating counters — recomputed from aggregates inside the same
@@ -100,6 +107,9 @@ model Video {
   @@index([category])
   @@index([createdAt])
   @@index([popcornScore])
+  @@index([status, createdAt])
+  // Basic title search until a real search engine lands.
+  @@index([title])
 }
 
 model Channel {
@@ -161,9 +171,12 @@ model Comment {
   text        String
   // Optional timecode (seconds into the video) the comment is pinned to.
   timecodeSec Int?
+  // The video's creator can pin one comment to the top.
+  pinned      Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   @@index([videoId, timecodeSec])
+  @@index([videoId, createdAt])
 }
 
 model Friendship {
@@ -201,7 +214,27 @@ model WatchEvent {
   videoId   String
   video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
   watchedAt DateTime @default(now())
+  // How far they got (seconds) — powers Continue Watching + completion rate.
+  progressSec Int     @default(0)
+  completed   Boolean @default(false)
 
   @@index([userId, watchedAt])
-  @@index([videoId])
+  @@index([videoId, watchedAt]) // per-day analytics scans
+}
+
+// Lightweight in-app notifications: friend activity and new videos in
+// channels you follow. `href` is where tapping it goes.
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // "friend_request" | "friend_accept" | "channel_video"
+  type      String
+  text      String
+  href      String   @default("/")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
