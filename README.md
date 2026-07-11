@@ -18,7 +18,12 @@ a celebrated creator.
 | **Two modes** | Airbnb-style toggle between **Watching** and **Creating** — the whole nav re-skins |
 | **Creator celebration** | Per-video backstory ("how I made it"), creator pages with about / tools & equipment / process, mini-series with auto-numbered episodes |
 | **Friends & profiles** | Everyone gets a profile; add friends by username, accept/decline requests |
-| **Recommendations** | Deterministic content-based recs from your saves, ratings, and watch history; per-channel "add these?" suggestions |
+| **Recommendations** | Deterministic content-based recs from your saves, ratings, and watch history — with "Because you like…" reasons; per-channel "add these?" suggestions |
+| **Continue watching** | Unfinished videos lead your feed and resume where you left off |
+| **Search** | Find videos, creators, and channels from the storefront |
+| **Notifications** | Friend activity and new videos in channels you follow — "What's new" inbox + tab badge |
+| **Captions** | Creators add WebVTT captions; viewers toggle CC on the player |
+| **Creator studio** | Per-video analytics (views, 7-day trend, completion rate), edit/delete, drafts, mini-series management, pinned comments |
 
 ## Run it
 

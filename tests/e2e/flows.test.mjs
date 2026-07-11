@@ -246,6 +246,95 @@ await step("demo account sees and accepts the friend request", async () => {
   await context3.close();
 });
 
+await step("search finds videos, creators, and channels", async () => {
+  await page.goto(BASE + "/search?q=yogurt");
+  await page.waitForSelector("text=The Last Yogurt");
+  await page.goto(BASE + "/search?q=maya");
+  await page.waitForSelector("text=Maya Makes");
+  await page.goto(BASE + "/search?q=laugh");
+  await page.waitForSelector("text=The Laugh Track");
+});
+
+await step("drafts stay out of search results", async () => {
+  await page.goto(BASE + "/search?q=secret recipe");
+  await page.waitForTimeout(600);
+  const found = await page.locator("text=The Secret Recipe").count();
+  assert.equal(found, 0, "draft video leaked into search");
+});
+
+await step("friend acceptance notified the requester", async () => {
+  await page.goto(BASE + "/you");
+  await page.waitForSelector("text=What's new");
+  await page.waitForSelector("text=/\\d+ new/");
+  await page.click("text=What's new");
+  await page.waitForURL(/\/notifications/);
+  await page.waitForSelector("text=said yes");
+});
+
+let captionedWatchUrl = "";
+await step("captions: CC toggle appears and turns on", async () => {
+  await page.goto(BASE + "/search?q=yogurt");
+  const href = await page.locator("a[href^='/watch/']").first().getAttribute("href");
+  await page.goto(BASE + href);
+  captionedWatchUrl = page.url();
+  await page.waitForSelector('button[aria-label="Turn captions on"]');
+  await page.click('button[aria-label="Turn captions on"]');
+  await page.waitForSelector('button[aria-pressed="true"][aria-label="Turn captions off"]');
+});
+
+await step("continue watching leads the home feed", async () => {
+  // Use a video this account never autoplayed, so no completed event
+  // exists: fetch one by search and post progress directly.
+  const videoId = await page.evaluate(async () => {
+    const res = await fetch("/api/search?q=noodle");
+    const data = await res.json();
+    const id = data.videos?.[0]?.id;
+    await fetch(`/api/videos/${id}/progress`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ progressSec: 6, completed: false }),
+    });
+    return id;
+  });
+  assert.ok(videoId, "search returned no video for progress test");
+  await page.goto(BASE + "/");
+  await page.waitForSelector("text=Continue watching");
+});
+
+let studioVideoUrl = "";
+await step("studio: analytics page shows and edit saves", async () => {
+  await page.goto(BASE + "/studio");
+  await page.click("text=E2E Upload Test");
+  await page.waitForSelector("text=How it's doing");
+  studioVideoUrl = page.url();
+  const title = page.getByLabel("Title");
+  await title.fill("E2E Upload Test v2");
+  await page.click('button:has-text("Save")');
+  await page.waitForSelector("text=Saved ✓");
+});
+
+await step("pin a comment as the creator", async () => {
+  const videoId = new URL(studioVideoUrl).pathname.split("/")[3];
+  await page.goto(BASE + `/watch/${videoId}`);
+  await page.click('button:has-text("Comment")');
+  await page.fill("textarea", "Pinning this one!");
+  await page.click('button:has-text("Post")');
+  await page.waitForSelector("text=Pinning this one!");
+  await page.click('button:has-text("Pin to top")');
+  await page.waitForSelector("text=Pinned");
+  await page.keyboard.press("Escape");
+});
+
+await step("delete the video from the studio", async () => {
+  await page.goto(studioVideoUrl);
+  await page.click('button:has-text("Delete this video")');
+  await page.click('button:has-text("Yes, delete it")');
+  await page.waitForURL(/\/studio$/);
+  await page.waitForTimeout(500);
+  const left = await page.locator("text=E2E Upload Test v2").count();
+  assert.equal(left, 0, "video still listed after delete");
+});
+
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);

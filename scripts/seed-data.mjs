@@ -133,7 +133,17 @@ export const VIDEOS = [
   // — The Break Room (comedy microdrama series)
   { slug: "breakroom-ep1", title: "The Last Yogurt", creator: "the_dramatist", category: "comedy", tags: ["sitcom", "office", "series"], dur: 12, series: "breakroom", ep: 1, quality: "great",
     description: "Someone ate Deb's yogurt. Deb knows.",
-    backstory: "We shot this in our real office after hours. The fridge hum you hear is genuine — we decided it was basically a character." },
+    backstory: "We shot this in our real office after hours. The fridge hum you hear is genuine — we decided it was basically a character.",
+    captions: `WEBVTT
+
+00:00.000 --> 00:03.000
+[The break room. A fridge hums ominously.]
+
+00:03.000 --> 00:07.000
+Deb: Someone ate my yogurt.
+
+00:07.000 --> 00:12.000
+Deb: And I will find out who.` },
   { slug: "breakroom-ep2", title: "Reply All", creator: "the_dramatist", category: "comedy", tags: ["sitcom", "office", "series"], dur: 11, series: "breakroom", ep: 2, quality: "great",
     description: "Gary hit reply all. To everyone. Including the CEO.",
     backstory: "Based on a true story that happened to me. The panic is method acting." },
@@ -170,7 +180,17 @@ export const VIDEOS = [
   // — Motivation
   { slug: "spark-monday", title: "Monday Is Not The Enemy", creator: "daily_spark", category: "motivation", tags: ["morning", "peptalk"], dur: 10, quality: "great",
     description: "Sixty seconds to reset how you see the week.",
-    backstory: "Filmed the morning after I really did not want to get up. That is why it works." },
+    backstory: "Filmed the morning after I really did not want to get up. That is why it works.",
+    captions: `WEBVTT
+
+00:00.000 --> 00:04.000
+Monday is not the enemy.
+
+00:04.000 --> 00:07.000
+It's just the first page.
+
+00:07.000 --> 00:10.000
+Go write a good one.` },
   { slug: "spark-smallwins", title: "Count The Small Wins", creator: "daily_spark", category: "motivation", tags: ["habits", "peptalk"], dur: 11, quality: "good",
     description: "Made your bed? That counts. It all counts.",
     backstory: "My granddaughter told me making her bed felt pointless. This one is for her." },
@@ -250,6 +270,10 @@ export const VIDEOS = [
   { slug: "toast-flip", title: "The Perfect Toast Flip", creator: "maya_makes", category: "shorts", tags: ["kitchen", "trickshot"], dur: 8, quality: "mixed",
     description: "One flip. No cuts. Pure luck.",
     backstory: "Take forty-one. The other forty live in my camera roll as a monument to hubris." },
+  // A draft — visible only in Maya's studio, never in public feeds.
+  { slug: "secret-recipe", title: "The Secret Recipe (Not Ready)", creator: "maya_makes", category: "food", tags: ["recipe", "wip"], dur: 9, quality: "good", draft: true,
+    description: "Still tasting. Do not publish yet.",
+    backstory: "Grandma said I could share it when it's perfect. It is not perfect." },
   { slug: "sock-puppet-news", title: "Sock Puppet Evening News", creator: "pet_theater", category: "kids", tags: ["silly", "puppets"], dur: 10, quality: "good",
     description: "Tonight's top story: bedtime remains unfair.",
     backstory: "My kid wrote the headlines. I just held the socks." },

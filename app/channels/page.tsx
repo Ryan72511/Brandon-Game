@@ -62,8 +62,27 @@ export default async function ChannelsPage() {
 
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-night-raised/85 px-4 py-3 backdrop-blur-md">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/[0.06] bg-night-raised/85 px-4 py-3 backdrop-blur-md">
         <h1 className="text-xl font-semibold text-night-ink">Channels</h1>
+        <Link
+          href="/search"
+          aria-label="Search"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.08] text-night-ink ring-1 ring-inset ring-white/15 transition hover:bg-white/[0.14]"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.8-3.8" />
+          </svg>
+        </Link>
       </header>
 
       <div className="px-4 pb-6">

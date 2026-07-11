@@ -124,6 +124,8 @@ async function main() {
         tags: JSON.stringify(v.tags ?? []),
         seriesId: v.series ? seriesRows[v.series].id : null,
         episodeNumber: v.ep ?? null,
+        status: v.draft ? "draft" : "published",
+        captionsVtt: v.captions ?? "",
         createdAt: daysAgo(2 + ((i * 7) % 40)),
       },
     });
@@ -145,7 +147,7 @@ async function main() {
       },
     });
     if (ch.kind === "normal") {
-      const matching = VIDEOS.filter((v) => v.category === ch.category);
+      const matching = VIDEOS.filter((v) => v.category === ch.category && !v.draft);
       for (const v of matching) {
         await prisma.channelVideo.create({
           data: { channelId: channels[ch.slug].id, videoId: videoRows[v.slug].id },
@@ -157,6 +159,7 @@ async function main() {
   console.log("Ratings…");
   const raters = [...VIEWERS.map((v) => v.username), ...CREATORS.map((c) => c.username)];
   for (const v of VIDEOS) {
+    if (v.draft) continue; // drafts have no public engagement
     const profile = QUALITY_PROFILES[v.quality] ?? QUALITY_PROFILES.good;
     const count = profile.min + Math.floor(rand() * (profile.max - profile.min + 1));
     const shuffled = [...raters].sort(() => rand() - 0.5).slice(0, count);
@@ -193,6 +196,7 @@ async function main() {
 
   console.log("Comments…");
   for (const v of VIDEOS) {
+    if (v.draft) continue;
     const n = 2 + Math.floor(rand() * 3);
     for (let i = 0; i < n; i++) {
       const c = pick(SEED_COMMENTS);

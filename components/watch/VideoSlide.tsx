@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import ScoreBadge from "@/components/ScoreBadge";
@@ -19,6 +19,7 @@ export default function VideoSlide({
   onOpenSheet,
   onEnded,
   onNextEpisode,
+  onProgress,
 }: {
   video: FeedVideo;
   index: number;
@@ -28,12 +29,44 @@ export default function VideoSlide({
   onOpenSheet: (kind: "rate" | "save" | "comments" | "detail") => void;
   onEnded: () => void;
   onNextEpisode: (id: string) => void;
+  onProgress?: (videoId: string, progressSec: number, completed: boolean) => void;
 }) {
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
   const [shareDone, setShareDone] = useState(false);
+  const [ccOn, setCcOn] = useState(false);
+  const [captionsUrl, setCaptionsUrl] = useState("");
+  const resumedRef = useRef(false);
+  const quartilesSent = useRef(new Set<number>());
+
+  // Captions travel as WebVTT text; the player needs a same-origin URL.
+  useEffect(() => {
+    if (!video.captionsVtt) return;
+    const url = URL.createObjectURL(new Blob([video.captionsVtt], { type: "text/vtt" }));
+    setCaptionsUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [video.captionsVtt]);
+
+  useEffect(() => {
+    if (!videoEl) return;
+    const track = videoEl.textTracks[0];
+    if (track) track.mode = ccOn ? "showing" : "hidden";
+  }, [ccOn, videoEl, captionsUrl]);
+
+  function maybeReportProgress(t: number, duration: number, ended: boolean) {
+    if (!onProgress) return;
+    if (ended) {
+      onProgress(video.id, Math.floor(duration), true);
+      return;
+    }
+    const quartile = Math.floor((t / Math.max(duration, 1)) * 4);
+    if (quartile >= 1 && quartile <= 3 && !quartilesSent.current.has(quartile)) {
+      quartilesSent.current.add(quartile);
+      onProgress(video.id, Math.floor(t), false);
+    }
+  }
 
   function togglePlay() {
     if (!videoEl) return;
@@ -95,12 +128,28 @@ export default function VideoSlide({
           className="aspect-video w-full bg-black"
           playsInline
           muted={muted}
+          crossOrigin="anonymous"
           preload={isActive ? "auto" : "metadata"}
           onClick={togglePlay}
           onPlay={() => setPaused(false)}
           onPause={() => setPaused(true)}
-          onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-          onEnded={onEnded}
+          onLoadedMetadata={(e) => {
+            // Continue watching: resume where they left off, once.
+            const el = e.currentTarget;
+            if (!resumedRef.current && video.resumeAtSec && video.resumeAtSec > 2) {
+              resumedRef.current = true;
+              el.currentTime = Math.min(video.resumeAtSec, Math.max(el.duration - 1, 0));
+            }
+          }}
+          onTimeUpdate={(e) => {
+            const el = e.currentTarget;
+            setCurrentTime(el.currentTime);
+            maybeReportProgress(el.currentTime, el.duration || duration, false);
+          }}
+          onEnded={(e) => {
+            maybeReportProgress(0, e.currentTarget.duration || duration, true);
+            onEnded();
+          }}
         >
           {/* WebM first for browsers without H.264; sources fall through on
               load failure, so uploads (mp4-only) still resolve. */}
@@ -108,6 +157,7 @@ export default function VideoSlide({
             <source src={video.src.replace(/\.mp4$/, ".webm")} type="video/webm" />
           )}
           <source src={video.src} type={video.src.endsWith(".webm") ? "video/webm" : "video/mp4"} />
+          {captionsUrl && <track kind="captions" src={captionsUrl} label="Captions" default />}
         </video>
         {paused && (
           <button
@@ -125,6 +175,18 @@ export default function VideoSlide({
         >
           {muted ? "🔇" : "🔊"}
         </button>
+        {video.captionsVtt && (
+          <button
+            onClick={() => setCcOn((c) => !c)}
+            aria-pressed={ccOn}
+            aria-label={ccOn ? "Turn captions off" : "Turn captions on"}
+            className={`absolute right-3 top-[68px] flex h-12 w-12 items-center justify-center rounded-full text-[13px] font-bold ${
+              ccOn ? "bg-white text-black" : "bg-black/55 text-white"
+            }`}
+          >
+            CC
+          </button>
+        )}
       </div>
 
       {/* Scrubber with comment tick marks */}
@@ -197,6 +259,13 @@ export default function VideoSlide({
           {shareDone ? "Link copied!" : "Share"}
         </button>
       </div>
+
+      {/* Why this video is here */}
+      {(video.resumeAtSec || video.reason) && (
+        <p className="px-4 pt-2 text-[13px] font-semibold text-white/60">
+          {video.resumeAtSec ? "▸ Continue watching" : video.reason}
+        </p>
+      )}
 
       {/* Title + score + teaser -> detail sheet */}
       <button

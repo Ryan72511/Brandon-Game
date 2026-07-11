@@ -68,10 +68,12 @@ const CREATING_TABS = [
 export default function TabBar({
   mode,
   signedIn,
+  unreadCount = 0,
 }: {
   mode: string;
   signedIn: boolean;
   username: string | null;
+  unreadCount?: number;
 }) {
   const pathname = usePathname();
   // The watch feed is immersive; the tab bar stays so people never get lost.
@@ -83,7 +85,8 @@ export default function TabBar({
     pathname.startsWith("/watch") ||
     pathname.startsWith("/surprise") ||
     pathname.startsWith("/channels") ||
-    pathname.startsWith("/channel/");
+    pathname.startsWith("/channel/") ||
+    pathname.startsWith("/search");
 
   return (
     <nav
@@ -115,7 +118,15 @@ export default function TabBar({
                     : "text-ink-soft"
               }`}
             >
-              <TabIcon name={tab.icon} />
+              <span className="relative">
+                <TabIcon name={tab.icon} />
+                {tab.href === "/you" && unreadCount > 0 && (
+                  <span
+                    aria-label={`${unreadCount} unread notifications`}
+                    className="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-surface"
+                  />
+                )}
+              </span>
               {tab.label}
             </Link>
           );

@@ -12,6 +12,7 @@ export interface CommentDto {
   id: string;
   text: string;
   timecodeSec: number | null;
+  pinned: boolean;
   createdAt: string;
   user: {
     username: string;

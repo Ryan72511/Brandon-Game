@@ -25,6 +25,8 @@ export default function UploadForm() {
   const [category, setCategory] = useState<string>("");
   const [tags, setTags] = useState("");
   const [seriesTitle, setSeriesTitle] = useState("");
+  const [captionsVtt, setCaptionsVtt] = useState("");
+  const [status, setStatus] = useState<"published" | "draft">("published");
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -101,6 +103,8 @@ export default function UploadForm() {
     form.set("tags", tags);
     form.set("durationSec", String(duration ?? 60));
     if (seriesTitle.trim()) form.set("seriesTitle", seriesTitle.trim());
+    form.set("captionsVtt", captionsVtt);
+    form.set("status", status);
 
     const res = await fetch("/api/videos", { method: "POST", body: form });
     setBusy(false);
@@ -245,6 +249,49 @@ export default function UploadForm() {
           className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
+
+      <label className="flex flex-col gap-1 font-semibold">
+        Captions{" "}
+        <span className="font-normal text-ink-soft">
+          (WebVTT format — you can add these later too)
+        </span>
+        <textarea
+          value={captionsVtt}
+          onChange={(e) => setCaptionsVtt(e.target.value)}
+          placeholder={"WEBVTT\n\n00:00.000 --> 00:03.000\nHello!"}
+          maxLength={20000}
+          rows={3}
+          className="rounded-xl border-2 border-line bg-surface p-4 font-mono text-[14px] font-normal outline-none focus:border-accent"
+        />
+      </label>
+
+      <div className="flex flex-col gap-1 font-semibold">
+        <span>Ready for everyone?</span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            aria-pressed={status === "published"}
+            onClick={() => setStatus("published")}
+            className={`min-h-12 flex-1 rounded-full border-2 font-bold ${
+              status === "published"
+                ? "border-accent bg-accent text-white"
+                : "border-line bg-surface"
+            }`}
+          >
+            Publish now
+          </button>
+          <button
+            type="button"
+            aria-pressed={status === "draft"}
+            onClick={() => setStatus("draft")}
+            className={`min-h-12 flex-1 rounded-full border-2 font-bold ${
+              status === "draft" ? "border-accent bg-accent text-white" : "border-line bg-surface"
+            }`}
+          >
+            Save as draft
+          </button>
+        </div>
+      </div>
 
       {error && <p className="font-semibold text-accent">{error}</p>}
 

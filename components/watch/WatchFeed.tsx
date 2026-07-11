@@ -35,12 +35,14 @@ export default function WatchFeed({
   videos,
   startId,
   signedIn,
+  viewerUsername = null,
   myChannels: initialChannels,
   emptyMessage = "Nothing to watch here yet.",
 }: {
   videos: FeedVideo[];
   startId?: string;
   signedIn: boolean;
+  viewerUsername?: string | null;
   myChannels: MyChannel[];
   emptyMessage?: string;
 }) {
@@ -252,6 +254,18 @@ export default function WatchFeed({
             }}
             onEnded={() => advance(index)}
             onNextEpisode={goToVideo}
+            onProgress={
+              signedIn
+                ? (videoId, progressSec, completed) => {
+                    fetch(`/api/videos/${videoId}/progress`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ progressSec, completed }),
+                      keepalive: true,
+                    }).catch(() => {});
+                  }
+                : undefined
+            }
           />
         ))}
       </div>
@@ -272,6 +286,8 @@ export default function WatchFeed({
         <CommentsSheet
           videoId={sheetVideo.id}
           signedIn={signedIn}
+          creatorUsername={sheetVideo.creator.username}
+          viewerIsCreator={Boolean(viewerUsername && viewerUsername === sheetVideo.creator.username)}
           getCurrentTime={() => {
             const index = items.findIndex((v) => v.id === sheetVideo.id);
             return videoEls.current.get(index)?.currentTime ?? 0;

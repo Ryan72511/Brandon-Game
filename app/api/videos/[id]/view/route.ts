@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withUser } from "@/lib/api";
+import { LIMITS } from "@/lib/ratelimit";
 
 type Params = [{ params: Promise<{ id: string }> }];
 
@@ -24,4 +25,4 @@ export const POST = withUser<Params>(async (user, _req, { params }) => {
     ]);
   }
   return NextResponse.json({ ok: true });
-});
+}, LIMITS.telemetry);

@@ -55,6 +55,16 @@ export default async function StudioPage() {
         </Link>
       </div>
 
+      <Link
+        href="/studio/series"
+        className="flex min-h-14 items-center justify-between rounded-xl border border-line bg-surface p-4 shadow-card"
+      >
+        <span className="font-semibold">Your mini-series</span>
+        <span className="text-xl text-ink-soft" aria-hidden>
+          ›
+        </span>
+      </Link>
+
       {videos.length === 0 ? (
         <div className="rounded-xl border border-line bg-surface p-6 text-center shadow-card">
           <p className="text-4xl" aria-hidden>
@@ -70,15 +80,22 @@ export default async function StudioPage() {
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">Your videos</h2>
           {videos.map((v) => (
-            <VideoCard
-              key={v.id}
-              id={v.id}
-              title={v.title}
-              thumb={v.thumb}
-              durationSec={v.durationSec}
-              score={v.score}
-              creatorName={`${v.viewCount} views · ${v.commentCount} comments`}
-            />
+            <div key={v.id} className="relative">
+              {v.status === "draft" && (
+                <span className="absolute left-3 top-3 z-10 rounded-full bg-gold px-2 py-0.5 text-[12px] font-bold text-[#1c1917]">
+                  Draft
+                </span>
+              )}
+              <VideoCard
+                id={v.id}
+                title={v.title}
+                thumb={v.thumb}
+                durationSec={v.durationSec}
+                score={v.score}
+                creatorName={`${v.viewCount} views · ${v.commentCount} comments`}
+                href={`/studio/video/${v.id}`}
+              />
+            </div>
           ))}
         </section>
       )}

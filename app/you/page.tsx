@@ -13,7 +13,7 @@ export default async function YouPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/you");
 
-  const [channelCount, friendCount, pendingCount, videoCount] = await Promise.all([
+  const [channelCount, friendCount, pendingCount, videoCount, unreadCount] = await Promise.all([
     prisma.channel.count({ where: { ownerId: user.id } }),
     prisma.friendship.count({
       where: {
@@ -23,6 +23,7 @@ export default async function YouPage() {
     }),
     prisma.friendship.count({ where: { addresseeId: user.id, status: "pending" } }),
     prisma.video.count({ where: { creatorId: user.id } }),
+    prisma.notification.count({ where: { userId: user.id, read: false } }),
   ]);
 
   return (
@@ -41,6 +42,31 @@ export default async function YouPage() {
       <ModeSwitch mode={user.mode} />
 
       <nav className="flex flex-col gap-3">
+        <Link
+          href="/notifications"
+          className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-4 shadow-card"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span className="flex-1 font-bold">What&apos;s new</span>
+          {unreadCount > 0 && (
+            <span className="rounded-full bg-accent px-2.5 py-0.5 text-[14px] font-bold text-white">
+              {unreadCount} new
+            </span>
+          )}
+        </Link>
         <Link
           href="/friends"
           className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-4 shadow-card"

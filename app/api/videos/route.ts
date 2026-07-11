@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { withUser, jsonError, cleanString } from "@/lib/api";
 import { LIMITS } from "@/lib/ratelimit";
 import { saveUpload, saveUploadStream } from "@/lib/storage";
+import { invalidateCandidateCache } from "@/lib/recs";
 import { CATEGORIES, MAX_UPLOAD_BYTES, MAX_VIDEO_SECONDS } from "@/lib/constants";
 
 // Creating-mode upload. The browser extracts duration + a poster frame
@@ -31,6 +32,10 @@ export const POST = withUser(async (user, req) => {
     .map((t) => t.trim().toLowerCase())
     .filter(Boolean)
     .slice(0, 8);
+
+  // Drafts stay visible only to their creator until published.
+  const status = form.get("status") === "draft" ? "draft" : "published";
+  const captionsVtt = cleanString(form.get("captionsVtt"), 20000);
 
   const durationRaw = Number(form.get("durationSec"));
   const durationSec = Number.isFinite(durationRaw)
@@ -82,8 +87,11 @@ export const POST = withUser(async (user, req) => {
       tags: JSON.stringify(tags),
       seriesId,
       episodeNumber,
+      status,
+      captionsVtt,
     },
   });
 
+  invalidateCandidateCache();
   return NextResponse.json({ ok: true, videoId: video.id });
 }, LIMITS.upload);

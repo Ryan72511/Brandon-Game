@@ -75,6 +75,7 @@ export default async function WatchPage({
       videos={videos}
       startId={id}
       signedIn={Boolean(user)}
+      viewerUsername={user?.username ?? null}
       myChannels={channels.map((c) => ({
         id: c.id,
         slug: c.slug,

@@ -19,6 +19,7 @@ export default async function SurprisePage() {
     <WatchFeed
       videos={videos}
       signedIn={Boolean(user)}
+      viewerUsername={user?.username ?? null}
       myChannels={channels.map((c) => ({
         id: c.id,
         slug: c.slug,

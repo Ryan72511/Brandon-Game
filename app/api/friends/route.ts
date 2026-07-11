@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withUser, jsonError, cleanString } from "@/lib/api";
+import { notify } from "@/lib/notify";
 
 // POST { username } — send a friend request (auto-accepts if they already
 // asked you). PATCH { friendshipId, action: "accept" | "decline" }.
@@ -26,6 +27,12 @@ export const POST = withUser(async (user, req) => {
     if (existing.requesterId === user.id) return jsonError("Request already sent.", 409);
     // They asked first — this counts as accepting.
     await prisma.friendship.update({ where: { id: existing.id }, data: { status: "accepted" } });
+    await notify(
+      existing.requesterId,
+      "friend_accept",
+      `${user.displayName} said yes — you're friends now!`,
+      "/friends"
+    );
     return NextResponse.json({ ok: true, status: "accepted" });
   }
 
@@ -44,6 +51,12 @@ export const POST = withUser(async (user, req) => {
     }
     throw err;
   }
+  await notify(
+    other.id,
+    "friend_request",
+    `${user.displayName} wants to be your friend`,
+    "/friends"
+  );
   return NextResponse.json({ ok: true, status: "pending" });
 });
 
@@ -58,6 +71,12 @@ export const PATCH = withUser(async (user, req) => {
   }
   if (action === "accept") {
     await prisma.friendship.update({ where: { id: friendshipId }, data: { status: "accepted" } });
+    await notify(
+      friendship.requesterId,
+      "friend_accept",
+      `${user.displayName} said yes — you're friends now!`,
+      "/friends"
+    );
     return NextResponse.json({ ok: true, status: "accepted" });
   }
   if (action === "decline") {

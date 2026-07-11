@@ -15,9 +15,11 @@ export interface RateLimit {
 
 export const LIMITS = {
   auth: { perMinute: 5, burst: 5 }, // login/signup attempts
-  write: { perMinute: 20, burst: 10 }, // comments, ratings, saves, follows
+  write: { perMinute: 60, burst: 30 }, // comments, ratings, saves, follows
   upload: { perMinute: 2, burst: 3 }, // video/cover uploads
   create: { perMinute: 6, burst: 6 }, // channels, friend requests
+  // View/progress pings fire every few seconds while scrolling a feed.
+  telemetry: { perMinute: 240, burst: 120 },
 } as const;
 
 export function clientIp(req: Request): string {

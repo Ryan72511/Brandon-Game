@@ -61,6 +61,20 @@ plugins, submit to the App Store. If native-feel scrolling ever becomes the
 bottleneck, the API layer already speaks JSON to any client — a React Native or
 SwiftUI client can be built against it without backend changes.
 
+## Hardening already in place
+
+- **Rate limiting**: in-process token buckets — per-IP on auth, per-user on
+  mutations, stricter tiers for uploads/creates. Swap to Redis when the app
+  runs on more than one instance.
+- **Sessions** expire server-side after a year (lazy cleanup on lookup).
+- **Visibility**: drafts/scheduled videos are filtered by `lib/visibility`
+  in every public read path; only creators see their own drafts.
+- **Perf**: recommendation candidate pool cached 60s in-process; feed
+  next-episode lookups batched; uploads stream to disk; comments are
+  cursor-paginated and channel pages page with "Show more".
+- **CI**: GitHub Actions runs db push → seed → unit → lint → build → the
+  full Playwright e2e suite on every push.
+
 ## Moderation & safety (pre-launch requirement)
 
 Not built yet, deliberately scoped for launch week: report button writing to a

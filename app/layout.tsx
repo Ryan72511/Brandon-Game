@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/session";
+import { prisma } from "@/lib/db";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 import TabBar from "@/components/TabBar";
 
@@ -21,6 +22,9 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const user = await getCurrentUser();
+  const unreadCount = user
+    ? await prisma.notification.count({ where: { userId: user.id, read: false } })
+    : 0;
   return (
     <html lang="en">
       <body className="antialiased">
@@ -30,6 +34,7 @@ export default async function RootLayout({
             mode={user?.mode ?? "watching"}
             signedIn={Boolean(user)}
             username={user?.username ?? null}
+            unreadCount={unreadCount}
           />
         </div>
       </body>

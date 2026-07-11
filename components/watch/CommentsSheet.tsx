@@ -7,11 +7,13 @@ import { formatTimecode, timeAgo } from "@/lib/format";
 import type { CommentDto } from "./types";
 
 // Timecoded comments: each comment can pin to a moment; tapping the time
-// chip seeks the video there. The composer auto-stamps the current time —
-// one tap removes the stamp.
+// chip seeks the video. The creator of the video can pin one comment to the
+// top, and their own comments carry a Creator badge.
 export default function CommentsSheet({
   videoId,
   signedIn,
+  creatorUsername,
+  viewerIsCreator,
   getCurrentTime,
   onSeek,
   onPosted,
@@ -19,12 +21,16 @@ export default function CommentsSheet({
 }: {
   videoId: string;
   signedIn: boolean;
+  creatorUsername: string;
+  viewerIsCreator: boolean;
   getCurrentTime: () => number;
   onSeek: (seconds: number) => void;
   onPosted: () => void;
   onClose: () => void;
 }) {
   const [comments, setComments] = useState<CommentDto[] | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [text, setText] = useState("");
   const [stamp, setStamp] = useState<number | null>(null);
   const [posting, setPosting] = useState(false);
@@ -35,7 +41,9 @@ export default function CommentsSheet({
     fetch(`/api/videos/${videoId}/comments`)
       .then((r) => r.json())
       .then((data) => {
-        if (!cancelled) setComments(data.comments ?? []);
+        if (cancelled) return;
+        setComments(data.comments ?? []);
+        setNextCursor(data.nextCursor ?? null);
       })
       .catch(() => {
         if (!cancelled) setComments([]);
@@ -44,6 +52,40 @@ export default function CommentsSheet({
       cancelled = true;
     };
   }, [videoId]);
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/videos/${videoId}/comments?cursor=${nextCursor}`);
+      const data = await res.json();
+      setComments((prev) => [...(prev ?? []), ...(data.comments ?? [])]);
+      setNextCursor(data.nextCursor ?? null);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  async function togglePin(comment: CommentDto) {
+    const res = await fetch(`/api/comments/${comment.id}/pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pinned: !comment.pinned }),
+    });
+    if (res.ok) {
+      setComments((prev) => {
+        if (!prev) return prev;
+        const updated = prev.map((c) => ({
+          ...c,
+          pinned: c.id === comment.id ? !comment.pinned : false,
+        }));
+        // Keep the pinned comment on top.
+        return [...updated].sort(
+          (a, b) => Number(b.pinned) - Number(a.pinned)
+        );
+      });
+    }
+  }
 
   function openComposer() {
     setStamp(Math.floor(getCurrentTime()));
@@ -62,7 +104,11 @@ export default function CommentsSheet({
     setPosting(false);
     if (res.ok) {
       const data = await res.json();
-      setComments((prev) => [data.comment, ...(prev ?? [])]);
+      setComments((prev) => {
+        const pinnedOnes = (prev ?? []).filter((c) => c.pinned);
+        const rest = (prev ?? []).filter((c) => !c.pinned);
+        return [...pinnedOnes, data.comment, ...rest];
+      });
       setText("");
       setStamp(null);
       onPosted();
@@ -121,31 +167,61 @@ export default function CommentsSheet({
       ) : comments.length === 0 ? (
         <p className="py-6 text-center text-ink-soft">No comments yet. Be the first!</p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {comments.map((c) => (
-            <li key={c.id} className="flex gap-3">
-              <Avatar emoji={c.user.avatarEmoji} color={c.user.avatarColor} size={36} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px]">
-                  <span className="font-bold">{c.user.displayName}</span>{" "}
-                  <span className="text-ink-soft">· {timeAgo(c.createdAt)}</span>
-                </p>
-                <p className="break-words">
-                  {c.timecodeSec !== null && (
+        <>
+          <ul className="flex flex-col gap-4">
+            {comments.map((c) => (
+              <li
+                key={c.id}
+                className={`flex gap-3 ${c.pinned ? "-mx-2 rounded-xl bg-gold-soft/60 px-2 py-2" : ""}`}
+              >
+                <Avatar emoji={c.user.avatarEmoji} color={c.user.avatarColor} size={36} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-x-1.5 text-[15px]">
+                    <span className="font-bold">{c.user.displayName}</span>
+                    {c.user.username === creatorUsername && (
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-white">
+                        Creator
+                      </span>
+                    )}
+                    {c.pinned && (
+                      <span className="text-[12px] font-bold text-ink-soft">📌 Pinned</span>
+                    )}
+                    <span className="text-ink-soft">· {timeAgo(c.createdAt)}</span>
+                  </p>
+                  <p className="break-words">
+                    {c.timecodeSec !== null && (
+                      <button
+                        onClick={() => onSeek(c.timecodeSec!)}
+                        className="mr-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[14px] font-bold text-accent"
+                        title="Jump to this moment"
+                      >
+                        ▶ {formatTimecode(c.timecodeSec)}
+                      </button>
+                    )}
+                    {c.text}
+                  </p>
+                  {viewerIsCreator && (
                     <button
-                      onClick={() => onSeek(c.timecodeSec!)}
-                      className="mr-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-[14px] font-bold text-accent"
-                      title="Jump to this moment"
+                      onClick={() => togglePin(c)}
+                      className="mt-1 text-[13px] font-bold text-accent"
                     >
-                      ▶ {formatTimecode(c.timecodeSec)}
+                      {c.pinned ? "Unpin" : "Pin to top"}
                     </button>
                   )}
-                  {c.text}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {nextCursor && (
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="mt-4 min-h-12 w-full rounded-xl border-2 border-line bg-surface font-bold text-ink-soft disabled:opacity-40"
+            >
+              {loadingMore ? "Loading…" : "Show more comments"}
+            </button>
+          )}
+        </>
       )}
     </Sheet>
   );
