@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db";
 import { publicVideoWhere } from "@/lib/visibility";
 import { scoreDisplay, type ScoreDisplay } from "@/lib/score";
+import { isAdult } from "@/lib/age";
 
 export const SEARCH_MIN_LEN = 2;
 export const SEARCH_MAX_LEN = 60;
@@ -61,6 +62,13 @@ export async function searchAll(q: string, viewerId?: string | null): Promise<Se
   const notBlocked =
     blockedIds.length > 0 ? { creatorId: { notIn: blockedIds } } : {};
   const notBlockedUser = blockedIds.length > 0 ? { id: { notIn: blockedIds } } : {};
+
+  // Only confirmed adults can find mature videos in search.
+  const viewer = viewerId
+    ? await prisma.user.findUnique({ where: { id: viewerId }, select: { birthYear: true } })
+    : null;
+  const matureFilter = isAdult(viewer?.birthYear) ? {} : { mature: false };
+
   if (!q) return EMPTY_RESULTS;
 
   // SQLite's LIKE is case-insensitive for ASCII but Prisma doesn't guarantee
@@ -82,7 +90,7 @@ export async function searchAll(q: string, viewerId?: string | null): Promise<Se
   const [videos, creators, channels] = await Promise.all([
     prisma.video.findMany({
       // AND keeps publicVideoWhere's own OR (publishAt) separate from ours.
-      where: { AND: [publicVideoWhere(), notBlocked, { OR: videoOr }] },
+      where: { AND: [publicVideoWhere(), notBlocked, matureFilter, { OR: videoOr }] },
       orderBy: [{ popcornScore: "desc" }, { createdAt: "desc" }],
       take: 12,
       select: {
