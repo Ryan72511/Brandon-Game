@@ -72,7 +72,7 @@ export default async function StudioPage() {
           </p>
           <p className="mt-2 font-bold">Your first video starts here</p>
           <p className="mt-1 text-[15px] text-ink-soft">
-            Reely loves short, wide (16:9) videos — mini shows about a minute long. Tell
+            Gasp loves short, wide (16:9) videos — mini shows about a minute long. Tell
             people how you made it, too.
           </p>
         </div>

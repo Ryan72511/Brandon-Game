@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     return jsonError("That username and recovery code don't match.", 401);
   }
   if (user.suspended) {
-    return jsonError("This account is suspended. Contact support@reely.app.", 403);
+    return jsonError("This account is suspended. Contact support@gasp.app.", 403);
   }
 
   const nextCode = generateRecoveryCode();

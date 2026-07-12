@@ -1,4 +1,4 @@
-// Seeds Reely with creators, viewers, prebuilt channels, videos, ratings,
+// Seeds Gasp with creators, viewers, prebuilt channels, videos, ratings,
 // timecoded comments, friendships, and watch history. Idempotent: wipes and
 // re-seeds. Run generate-videos.mjs first so the media files exist.
 import { PrismaClient } from "@prisma/client";
@@ -70,7 +70,7 @@ async function main() {
     users[c.username] = await prisma.user.create({
       data: {
         username: c.username,
-        email: `${c.username}@reely.test`,
+        email: `${c.username}@gasp.test`,
         displayName: c.displayName,
         avatarEmoji: c.avatarEmoji,
         avatarColor: c.avatarColor,
@@ -89,7 +89,7 @@ async function main() {
     users[v.username] = await prisma.user.create({
       data: {
         username: v.username,
-        email: `${v.username}@reely.test`,
+        email: `${v.username}@gasp.test`,
         displayName: v.displayName,
         avatarEmoji: v.avatarEmoji,
         avatarColor: v.avatarColor,
@@ -104,8 +104,8 @@ async function main() {
   users["moderator"] = await prisma.user.create({
     data: {
       username: "moderator",
-      email: "moderator@reely.test",
-      displayName: "Reely Moderation",
+      email: "moderator@gasp.test",
+      displayName: "Gasp Moderation",
       avatarEmoji: "🛡️",
       avatarColor: "#8ECAE6",
       role: "admin",
@@ -117,7 +117,7 @@ async function main() {
   users["appreview"] = await prisma.user.create({
     data: {
       username: "appreview",
-      email: "appreview@reely.test",
+      email: "appreview@gasp.test",
       displayName: "App Review",
       avatarEmoji: "🙂",
       avatarColor: "#BDE0FE",

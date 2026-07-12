@@ -1,4 +1,4 @@
-// Reely data model — SQLite for local dev/demo, designed to port 1:1 to Postgres.
+// Gasp data model — SQLite for local dev/demo, designed to port 1:1 to Postgres.
 // Enum-like fields use String because SQLite has no native enums; allowed
 // values are documented per field and enforced in lib/validate.ts.
 

@@ -23,7 +23,7 @@ export const PATCH = withUser<Params>(async (user, req, { params }) => {
   // A moderator-removed video is locked — the creator can edit metadata but
   // cannot republish it themselves. Contact support to appeal.
   if (video.status === "removed") {
-    return jsonError("This video was removed by our moderators. Contact support@reely.app.", 403);
+    return jsonError("This video was removed by our moderators. Contact support@gasp.app.", 403);
   }
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;

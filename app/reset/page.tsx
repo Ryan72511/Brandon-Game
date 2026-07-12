@@ -1,14 +1,13 @@
 import { Suspense } from "react";
 import ResetForm from "@/components/ResetForm";
+import GaspMark from "@/components/GaspMark";
 
 export default function ResetPage() {
   return (
     <div className="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center gap-6 p-6">
-      <div className="text-center">
-        <p className="text-5xl" aria-hidden>
-          🍿
-        </p>
-        <h1 className="mt-2 text-3xl font-bold">Reset your password</h1>
+      <div className="flex flex-col items-center text-center">
+        <GaspMark size={56} />
+        <h1 className="mt-3 text-3xl font-bold display">Reset your password</h1>
       </div>
       <Suspense>
         <ResetForm />

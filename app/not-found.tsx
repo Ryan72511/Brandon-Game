@@ -1,12 +1,11 @@
 import Link from "next/link";
+import GaspMark from "@/components/GaspMark";
 
 export default function NotFound() {
   return (
     <div className="flex min-h-[70dvh] flex-col items-center justify-center gap-4 p-8 text-center">
-      <p className="text-5xl" aria-hidden>
-        🍿
-      </p>
-      <h1 className="text-2xl font-bold">That one&apos;s not showing</h1>
+      <GaspMark size={52} />
+      <h1 className="text-2xl font-bold display">That one&apos;s not showing</h1>
       <p className="text-ink-soft">
         The video or page you&apos;re after was moved, removed, or never existed.
       </p>

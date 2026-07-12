@@ -46,7 +46,7 @@ for (const [i, v] of VIDEOS.entries()) {
     `x=(w-text_w)/2:y=(h-text_h)/2-24:shadowcolor=black@0.4:shadowx=2:shadowy=2,` +
     `drawtext=fontfile=${FONT}:text='${sub}':fontcolor=white@0.75:fontsize=20:` +
     `x=(w-text_w)/2:y=(h)/2+28,` +
-    `drawtext=fontfile=${FONT}:text='reely':fontcolor=white@0.5:fontsize=16:x=w-tw-16:y=h-th-12`;
+    `drawtext=fontfile=${FONT}:text='gasp':fontcolor=white@0.5:fontsize=16:x=w-tw-16:y=h-th-12`;
 
   execFileSync("ffmpeg", [
     "-y",

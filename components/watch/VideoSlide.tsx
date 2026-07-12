@@ -298,7 +298,7 @@ export default function VideoSlide({
         className="mx-4 mt-2 rounded-xl bg-white/5 p-3 text-left hover:bg-white/10"
       >
         <span className="flex items-center gap-2">
-          <span className="line-clamp-1 flex-1 text-lg font-bold">{video.title}</span>
+          <span className="display line-clamp-1 flex-1 text-lg font-bold">{video.title}</span>
           <ScoreBadge score={video.score} size="sm" />
         </span>
         {(video.backstory || video.description) && (

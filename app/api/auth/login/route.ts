@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   }
   if (user.suspended) {
     return jsonError(
-      "This account is suspended for breaking the community guidelines. Contact support@reely.app.",
+      "This account is suspended for breaking the community guidelines. Contact support@gasp.app.",
       403
     );
   }

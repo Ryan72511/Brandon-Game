@@ -192,7 +192,7 @@ await step("upload a video with backstory and series", async () => {
   await page.selectOption("select", "comedy");
   await page.fill("textarea", "Made by a robot, reviewed by humans.");
   await page.locator('label:has-text("This is mine to share") input').check();
-  await page.click('button:has-text("Put it on Reely")');
+  await page.click('button:has-text("Put it on Gasp")');
   await page.waitForURL(/\/watch\/.+/, { timeout: 30000 });
   await page.waitForSelector("text=E2E Upload Test");
 });
@@ -255,7 +255,7 @@ await step("demo account sees and accepts the friend request", async () => {
   await page3.goto(BASE + "/login");
   await page3.click("text=Welcome back");
   await page3.fill('input[placeholder="like sunny_dan"]', "demo");
-  await page3.fill('input[type="password"]', "reely123");
+  await page3.fill('input[type="password"]', "gasp123");
   await page3.click('button:has-text("Sign in")');
   await page3.waitForURL(BASE + "/");
   await page3.goto(BASE + "/friends");
@@ -400,7 +400,7 @@ await step("moderator removes the reported video", async () => {
   await modPage.goto(BASE + "/login");
   await modPage.click("text=Welcome back");
   await modPage.fill('input[placeholder="like sunny_dan"]', "moderator");
-  await modPage.fill('input[type="password"]', "reely123");
+  await modPage.fill('input[type="password"]', "gasp123");
   await modPage.click('button:has-text("Sign in")');
   await modPage.waitForURL(BASE + "/");
   await modPage.goto(BASE + "/you");
@@ -424,7 +424,7 @@ await step("creator cannot republish a moderator-removed video", async () => {
   await p.goto(BASE + "/login");
   await p.click("text=Welcome back");
   await p.fill('input[placeholder="like sunny_dan"]', "the_dramatist");
-  await p.fill('input[type="password"]', "reely123");
+  await p.fill('input[type="password"]', "gasp123");
   await p.click('button:has-text("Sign in")');
   await p.waitForURL(BASE + "/");
   const videoId = new URL(captionedWatchUrl).pathname.split("/")[2];

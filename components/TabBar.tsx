@@ -96,22 +96,13 @@ export default function TabBar({
       cancelled = true;
     };
   }, [pathname, signedIn]);
-  // Dark bar on dark screens: the storefront routes and the watch feeds
-  // (home, /watch, /surprise all sit on a near-black canvas).
-  const dark =
-    pathname === "/" ||
-    pathname.startsWith("/watch") ||
-    pathname.startsWith("/surprise") ||
-    pathname.startsWith("/channels") ||
-    pathname.startsWith("/channel/") ||
-    pathname.startsWith("/search");
 
+  // Gasp is dark-first everywhere, so the bar is always the Panel treatment:
+  // Orchid for the active tab, Dim for the rest.
   return (
     <nav
       aria-label="Main"
-      className={`fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur ${
-        dark ? "border-white/10 bg-[#0f1122]/95" : "border-line bg-surface/95"
-      }`}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur"
     >
       <div className="mx-auto flex h-16 w-full max-w-lg items-stretch">
         {tabs.map((tab) => {
@@ -127,13 +118,7 @@ export default function TabBar({
               href={tab.href}
               aria-current={active ? "page" : undefined}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[13px] font-semibold ${
-                active
-                  ? dark
-                    ? "text-white"
-                    : "text-accent"
-                  : dark
-                    ? "text-[#8e94ab]"
-                    : "text-ink-soft"
+                active ? "text-accent" : "text-ink-soft"
               }`}
             >
               <span className="relative">
@@ -141,9 +126,7 @@ export default function TabBar({
                 {tab.href === "/you" && unread > 0 && (
                   <span
                     aria-label={`${unread} unread notifications`}
-                    className={`absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-accent ring-2 ${
-                      dark ? "ring-[#0f1122]" : "ring-surface"
-                    }`}
+                    className="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-flare ring-2 ring-surface"
                   />
                 )}
               </span>

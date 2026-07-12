@@ -1,4 +1,4 @@
-# Reely — iPhone App Store submission playbook
+# Gasp — iPhone App Store submission playbook
 
 Status against the readiness checklist, what ships in this codebase, and
 what must happen in the native wrapper / App Store Connect before submitting.
@@ -21,13 +21,13 @@ what must happen in the native wrapper / App Store Connect before submitting.
   queue, open reports with one-tap remove/suspend/dismiss, resolved-report
   log (the documented record of decisions), suspended-account management.
 - Suspension: blocks sign-in, kills sessions, hides all content instantly.
-- Pre-publication review mode: set `REELY_REVIEW_MODE=1` and every new
+- Pre-publication review mode: set `GASP_REVIEW_MODE=1` and every new
   upload lands in the moderation queue as "In review" until approved.
   **Turn this ON for the App Store build** (checklist's curated-launch
   approach). Local dev leaves it off so demos stay one-step.
 - Community guidelines, Terms of use, Privacy policy, Copyright/takedowns,
   and Support pages live at `/about/*`, linked from the You tab and at
-  signup ("By continuing you agree…"). Support contact: support@reely.app
+  signup ("By continuing you agree…"). Support contact: support@gasp.app
   (rights holders don't need an account).
 
 **Rights & age**
@@ -57,7 +57,7 @@ with **Capacitor** (WKWebView). Wrapper-level work:
 1. **Xcode project** built with the current required iOS SDK (verify the
    minimum — iOS 26 SDK as of July 2026 — right before upload).
 2. **Sign in with Apple**: required only if a third-party social login is
-   added. Today Reely uses its own username/password accounts, which is
+   added. Today Gasp uses its own username/password accounts, which is
    allowed without Sign in with Apple. If you ever add Google/Facebook
    login, add Apple's at the same time.
 3. **PrivacyInfo.xcprivacy** (privacy manifest) declaring:
@@ -81,10 +81,10 @@ with **Capacitor** (WKWebView). Wrapper-level work:
 - Deploy per docs/ARCHITECTURE.md: Postgres, S3/R2 + CDN for media,
   HTTPS domain (share sheet requires it), Mux (or keep single-rendition
   MP4/WebM to start — allowed, just heavier).
-- Set `REELY_REVIEW_MODE=1`.
+- Set `GASP_REVIEW_MODE=1`.
 - Replace generated seed videos with real licensed launch content; keep
   the license/consent records (Apple may ask).
-- Email service for support@reely.app (and for password reset — see gaps).
+- Email service for support@gasp.app (and for password reset — see gaps).
 - Crash/uptime monitoring (e.g. Sentry — then update the privacy manifest
   and policy accordingly).
 
@@ -111,7 +111,7 @@ with **Capacitor** (WKWebView). Wrapper-level work:
 
 ## App Store Connect package 📝
 
-- **Name**: Reely (5 chars ✓). **Subtitle** (≤30): "Tiny shows. Big feelings."
+- **Name**: Gasp (5 chars ✓). **Subtitle** (≤30): "Tiny shows. Big feelings."
 - **Description**: watch and make one-minute 16:9 mini-shows; build your own
   TV-style channels; rate with the Popcorn Score; family-friendly by design.
   Never mention TikTok/Netflix/Instagram or other trademarks.
@@ -126,7 +126,7 @@ with **Capacitor** (WKWebView). Wrapper-level work:
 
 ## Notes for App Review (paste + adapt) 🗒
 
-> Reely is a curated platform for cinematic 16:9 mini-videos ("tiny shows").
+> Gasp is a curated platform for cinematic 16:9 mini-videos ("tiny shows").
 > 1. All uploads require a rights confirmation and are held for moderator
 >    approval before publication (review mode is enabled in this build).
 > 2. Every video, creator, and comment has a Report option (six categories);
@@ -144,8 +144,8 @@ with **Capacitor** (WKWebView). Wrapper-level work:
 > 8. No purchases, subscriptions, ads, or tracking in this version.
 >
 > Reviewer accounts (non-expiring, no codes required):
-> - Viewer/creator: `appreview` / `reely123` — full watch + create experience.
-> - Moderator: `moderator` / `reely123` — opens the /admin dashboard from
+> - Viewer/creator: `appreview` / `gasp123` — full watch + create experience.
+> - Moderator: `moderator` / `gasp123` — opens the /admin dashboard from
 >   the You tab ("Moderation").
 
 ## Reviewer walkthrough (mirrors the checklist's final test)

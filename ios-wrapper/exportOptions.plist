@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Reely — App Store export options template (exportOptions.plist)
+  Gasp — App Store export options template (exportOptions.plist)
   ==========================================================================
   Used for command-line archiving/exporting instead of the Xcode "Distribute
   App" wizard. Most developers can just use the Xcode Organizer UI (see
@@ -10,10 +10,10 @@
 
       xcodebuild -workspace ios/App/App.xcworkspace \
         -scheme App -configuration Release \
-        -archivePath build/Reely.xcarchive archive
+        -archivePath build/Gasp.xcarchive archive
 
       xcodebuild -exportArchive \
-        -archivePath build/Reely.xcarchive \
+        -archivePath build/Gasp.xcarchive \
         -exportOptionsPlist ios-wrapper/exportOptions.plist \
         -exportPath build/export
 

@@ -80,14 +80,14 @@ export default function PrivacyPage() {
           You can edit your profile any time, and you can delete your
           account from Settings → Delete account, which removes your data as
           described above. For anything else — a question, a copy of your
-          data, or help with deletion — email support@reely.app.
+          data, or help with deletion — email support@gasp.app.
         </p>
 
         <h2 className="mt-6 mb-2 text-lg font-bold">For parents</h2>
         <p>
           {APP_NAME} accounts are for people 13 and older. We don&apos;t knowingly
           create accounts for younger children. If you believe a child under
-          13 has an account, email support@reely.app and we&apos;ll remove it.
+          13 has an account, email support@gasp.app and we&apos;ll remove it.
           Watching doesn&apos;t require an account, and creators must flag mature
           content, which is labeled and kept off kid-focused surfaces.
         </p>
@@ -96,7 +96,7 @@ export default function PrivacyPage() {
         <p>
           If this policy changes in a meaningful way, we&apos;ll update this page
           and the effective date, and let you know in the app. Questions go
-          to support@reely.app.
+          to support@gasp.app.
         </p>
       </div>
     </div>

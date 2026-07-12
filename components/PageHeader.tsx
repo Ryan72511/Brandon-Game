@@ -27,7 +27,7 @@ export default function PageHeader({
           ‹ Back
         </Link>
       )}
-      <h1 className={`flex-1 truncate text-xl font-bold ${dark ? "text-night-ink" : ""}`}>
+      <h1 className={`display flex-1 truncate text-xl font-bold ${dark ? "text-night-ink" : ""}`}>
         {title}
       </h1>
       {action}

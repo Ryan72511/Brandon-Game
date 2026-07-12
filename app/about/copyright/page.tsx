@@ -18,7 +18,7 @@ export default function CopyrightPage() {
         <h2 className="mt-6 mb-2 text-lg font-bold">If your work was posted without permission</h2>
         <p>
           You don&apos;t need a {APP_NAME} account to file a report. Email{" "}
-          <span className="font-semibold">support@reely.app</span> and
+          <span className="font-semibold">support@gasp.app</span> and
           include:
         </p>
         <ul className="mt-2 list-disc space-y-1 pl-5">

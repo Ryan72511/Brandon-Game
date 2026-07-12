@@ -13,7 +13,7 @@ export default function TermsPage() {
           Welcome to {APP_NAME}. These terms are the deal between you and{" "}
           {APP_NAME} when you use the app. We&apos;ve written them in plain
           language on purpose — if anything is unclear, ask us at
-          support@reely.app.
+          support@gasp.app.
         </p>
 
         <h2 className="mt-6 mb-2 text-lg font-bold">1. Who can use {APP_NAME}</h2>
@@ -28,7 +28,7 @@ export default function TermsPage() {
           Your account is yours. Keep your password to yourself, and pick one
           that isn&apos;t easy to guess. You&apos;re responsible for what happens under
           your account, so if you think someone else got into it, change your
-          password and tell us at support@reely.app.
+          password and tell us at support@gasp.app.
         </p>
 
         <h2 className="mt-6 mb-2 text-lg font-bold">3. Your videos and your rights</h2>
@@ -104,7 +104,7 @@ export default function TermsPage() {
 
         <h2 className="mt-6 mb-2 text-lg font-bold">10. Contact</h2>
         <p>
-          Questions about these terms? Email us at support@reely.app. We read
+          Questions about these terms? Email us at support@gasp.app. We read
           everything.
         </p>
       </div>

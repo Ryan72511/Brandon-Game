@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   }
   if (ageFromBirthYear(birthYear) < MIN_SIGNUP_AGE) {
     return jsonError(
-      `You need to be at least ${MIN_SIGNUP_AGE} to join Reely. Thanks for stopping by!`,
+      `You need to be at least ${MIN_SIGNUP_AGE} to join Gasp. Thanks for stopping by!`,
       403
     );
   }

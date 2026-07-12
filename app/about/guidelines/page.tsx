@@ -81,7 +81,7 @@ export default function GuidelinesPage() {
         <p className="mt-3">
           Most people never need to think about any of this. Make things you
           love, be decent to each other, and you&apos;ll be fine. Questions? Write
-          to support@reely.app.
+          to support@gasp.app.
         </p>
       </div>
     </div>

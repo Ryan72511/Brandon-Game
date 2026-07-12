@@ -15,7 +15,7 @@ export default async function StudioProfilePage() {
       <PageHeader title="Your creator page" backHref="/studio" />
       <p className="text-ink-soft">
         This is what people see when they tap your name. Tell them who you are and how you
-        make your videos — Reely celebrates the maker.
+        make your videos — Gasp celebrates the maker.
       </p>
       <CreatorProfileForm
         initial={{

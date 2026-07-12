@@ -152,7 +152,7 @@ export default function AuthForm() {
                 className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
               />
               <span className="font-normal text-[13px] text-ink-soft">
-                We only use this to keep Reely age-appropriate.
+                We only use this to keep Gasp age-appropriate.
               </span>
             </label>
             <fieldset>

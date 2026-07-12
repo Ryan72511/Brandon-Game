@@ -8,12 +8,12 @@ const PAGES = [
   {
     href: "/about/guidelines",
     title: "Community guidelines",
-    sub: "The rules that keep Reely friendly",
+    sub: "The rules that keep Gasp friendly",
   },
   {
     href: "/about/terms",
     title: "Terms of use",
-    sub: "The deal between you and Reely",
+    sub: "The deal between you and Gasp",
   },
   {
     href: "/about/privacy",
@@ -40,8 +40,8 @@ export default function SupportPage() {
         <div className="mt-4 rounded-xl border border-line bg-surface p-5 shadow-card">
           <p className="text-lg font-bold">Email us</p>
           <p className="mt-1">
-            <a href="mailto:support@reely.app" className="font-semibold text-accent underline">
-              support@reely.app
+            <a href="mailto:support@gasp.app" className="font-semibold text-accent underline">
+              support@gasp.app
             </a>
           </p>
           <p className="mt-2 text-[15px] text-ink-soft">

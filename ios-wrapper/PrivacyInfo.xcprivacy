@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Reely — App Privacy Manifest (PrivacyInfo.xcprivacy)
+  Gasp — App Privacy Manifest (PrivacyInfo.xcprivacy)
   ==========================================================================
   Drag this file into the Xcode project (into the app target, "Copy items if
   needed" checked so it is added to "Copy Bundle Resources"). Apple reads it at
   upload time and cross-checks it against your App Store Connect privacy
   answers, so keep the two in sync (see docs/APP_STORE.md).
 
-  WHAT THIS DECLARES (true for Reely today):
-    - NSPrivacyTracking = false. Reely does NOT track (no ATT prompt, no ad
+  WHAT THIS DECLARES (true for Gasp today):
+    - NSPrivacyTracking = false. Gasp does NOT track (no ATT prompt, no ad
       SDKs, no cross-app/third-party linking). NSPrivacyTrackingDomains empty.
     - Collected data:
         * User content (videos, comments) — LINKED to the account, NOT used for
           tracking, purpose: App Functionality.
         * Product interaction (watch history / usage) — LINKED, NOT tracking,
-          purpose: App Functionality. (Reely has no third-party analytics.)
+          purpose: App Functionality. (Gasp has no third-party analytics.)
     - Required-reason APIs:
         * UserDefaults (CA92.1) — used by Capacitor's WKWebView container.
 

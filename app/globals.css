@@ -1,45 +1,84 @@
 @import "tailwindcss";
 
-/* Reely design tokens — Facebook-familiar: cool gray canvas, white cards,
-   one blue accent. Popcorn gold stays reserved for scores so the rating
-   brand keeps its meaning. 8px spacing grid, one soft shadow. */
+/* Gasp design tokens — "elevated pulp, disciplined heat." Dark-first: Blackout
+   is the canvas, not a theme option. Two heat colors (Orchid + Flare) carry
+   all the branding via the Afterglow gradient; everything else is stagecraft.
+   The 90/8/2 rule: content, neutral chrome, heat accents. Type: Bricolage
+   Grotesque for display, Inter for UI. */
 @theme {
-  --color-bg: #f0f2f5;
-  --color-surface: #ffffff;
-  --color-line: #dadde1;
-  --color-ink: #050505;
-  --color-ink-soft: #65676b;
-  --color-accent: #1877f2;
-  --color-accent-soft: #e7f3ff;
-  --color-gold: #f2b01e;
-  --color-gold-soft: #fdf3dd;
-  --color-good: #42b72a;
-  /* Night tokens — the dark "storefront" canvas (channels routes only). */
-  --color-night: #0c0e1c;
-  --color-night-raised: #12142a;
-  --color-night-ink: #f4f5fa;
-  --color-night-ink-soft: #a7adc2;
-  --color-night-meta: #8e94ab;
-  --radius-card: 12px;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.1);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  --color-bg: #0b0b10;          /* Blackout — app canvas, scrims */
+  --color-surface: #15151d;     /* Panel — cards, sheets, nav */
+  --color-surface-2: #1d1d27;   /* Panel-2 — raised rows, inputs */
+  --color-line: #2a2a36;        /* Line — borders, dividers */
+  --color-ink: #f5f4f7;         /* Foam — primary text */
+  --color-ink-soft: #9b9aa7;    /* Dim — secondary text */
+  --color-ink-faint: #5e5d6b;   /* Faint — micro labels */
+  --color-accent: #c043ff;      /* Orchid — brand primary, actions */
+  --color-accent-soft: #241636; /* dark orchid tint — selected pills, wells */
+  --color-flare: #ff5c38;       /* Flare — LIVE, streaks, trending (scarce) */
+  --color-flare-soft: #2a1712;  /* dark flare tint */
+  --color-gold: #f2b63c;        /* Billionaire/coins + the Popcorn score */
+  --color-gold-soft: #2a2213;   /* dark gold tint */
+  --color-good: #3ddc97;        /* success */
+  --color-warn: #ffc24b;        /* warn */
+  --color-error: #ff4d5e;       /* error */
+  --color-info: #4da3ff;        /* info */
+  /* Night tokens kept as aliases so the storefront routes share the canvas. */
+  --color-night: #0b0b10;
+  --color-night-raised: #15151d;
+  --color-night-ink: #f5f4f7;
+  --color-night-ink-soft: #9b9aa7;
+  --color-night-meta: #5e5d6b;
+  --radius-card: 16px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-sans);
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* The one gradient the brand owns. Reserved for the mark, one CTA, progress. */
+:root {
+  --afterglow: linear-gradient(120deg, #c043ff 0%, #ff5c38 100%);
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-size: 1.125rem; /* 18px base — readable for everyone */
+  font-size: 1.125rem; /* 18px base — readable for everyone, kids to 80 */
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Big, obvious focus for keyboard users. */
+/* Bricolage Grotesque — display voice with a jawline. */
+.display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* The Afterglow gradient as text (wordmark accents, hot titles). */
+.afterglow-text {
+  background: var(--afterglow);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.afterglow-fill {
+  background: var(--afterglow);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* Big, obvious focus for keyboard users — Orchid on the dark canvas. */
 :focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
@@ -103,13 +142,13 @@ input[type="range"].scrubber::-moz-range-thumb {
   animation: pop-burst 350ms ease-out;
 }
 
-/* Sheet slide-up. */
+/* Sheet slide-up — settles on the drama curve. */
 @keyframes sheet-up {
   from { transform: translateY(24px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 .sheet-up {
-  animation: sheet-up 200ms ease-out;
+  animation: sheet-up 200ms var(--ease-settle);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -119,16 +158,15 @@ input[type="range"].scrubber::-moz-range-thumb {
   scrollbar-width: none;
 }
 
-/* The storefront's dark canvas: a faint aurora glow fading to near-black. */
+/* The storefront canvas: a faint Orchid aurora fading into Blackout. */
 .night-canvas {
   background-color: var(--color-night);
   background-image:
-    radial-gradient(120% 60% at 50% -10%, rgba(94, 84, 255, 0.16), transparent 60%),
-    linear-gradient(180deg, #1a1d33 0%, #12142a 30%, #0c0e1c 100%);
+    radial-gradient(120% 60% at 50% -10%, rgba(192, 67, 255, 0.18), transparent 60%),
+    linear-gradient(180deg, #1a1425 0%, #131019 30%, #0b0b10 100%);
 }
 
-/* Blue focus rings vanish on the dark canvas — use white there. Light
-   surfaces layered on top (sheets/dialogs) opt back into the accent ring. */
+/* Focus rings on the dark canvas use white; light surfaces opt back in. */
 .night-scope :focus-visible {
   outline-color: #ffffff;
 }
@@ -136,14 +174,14 @@ input[type="range"].scrubber::-moz-range-thumb {
   outline-color: var(--color-accent);
 }
 
-/* Surprise Me's slowly breathing iridescent gradient. */
+/* Surprise Me's slowly breathing Afterglow gradient. */
 @keyframes hero-shift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 .hero-iridescent {
-  background-image: linear-gradient(120deg, #5b21b6, #be185d 45%, #7c3aed 80%, #5b21b6);
+  background-image: linear-gradient(120deg, #c043ff, #ff5c38 55%, #8a5cff 80%, #c043ff);
   background-size: 300% 300%;
   animation: hero-shift 9s ease-in-out infinite;
 }
@@ -152,7 +190,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 @media (prefers-reduced-motion: reduce) {
   .hero-iridescent {
     animation: none !important;
-    background-image: linear-gradient(135deg, #5b21b6, #be185d);
+    background-image: linear-gradient(135deg, #c043ff, #ff5c38);
     background-size: auto;
   }
 }

@@ -42,7 +42,7 @@ export default function ChannelActions({
     const url = `${window.location.origin}/channel/${slug}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: `${name} on Reely`, url });
+        await navigator.share({ title: `${name} on Gasp`, url });
         return;
       }
     } catch {

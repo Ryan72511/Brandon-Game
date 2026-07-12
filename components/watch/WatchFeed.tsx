@@ -238,7 +238,7 @@ export default function WatchFeed({
     <>
       <div
         ref={containerRef}
-        className="no-scrollbar h-[calc(100dvh-4rem)] snap-y snap-mandatory overflow-y-auto bg-[#18191a]"
+        className="no-scrollbar h-[calc(100dvh-4rem)] snap-y snap-mandatory overflow-y-auto bg-bg"
       >
         {items.map((video, index) => (
           <VideoSlide

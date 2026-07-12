@@ -6,7 +6,7 @@ import { CATEGORIES, CATEGORY_LABELS, MAX_VIDEO_SECONDS } from "@/lib/constants"
 
 // Upload with client-side probing: we read duration and grab a poster frame
 // in the browser (no server transcoding at MVP), and warn when the video
-// isn't roughly 16:9 — Reely is a wide-screen, TV-style place.
+// isn't roughly 16:9 — Gasp is a wide-screen, TV-style place.
 export default function UploadForm() {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -53,13 +53,13 @@ export default function UploadForm() {
       setDuration(d);
       if (d > MAX_VIDEO_SECONDS) {
         setDurationError(
-          `That's ${Math.round(d / 60)} minutes — Reely videos are ${MAX_VIDEO_SECONDS / 60} minutes or less. Trim it and try again.`
+          `That's ${Math.round(d / 60)} minutes — Gasp videos are ${MAX_VIDEO_SECONDS / 60} minutes or less. Trim it and try again.`
         );
       }
       const ratio = video.videoWidth / video.videoHeight;
       if (ratio < 1.5) {
         setAspectWarning(
-          "This video is quite tall. Reely is a wide-screen (16:9) place — it will show with black bars on the sides."
+          "This video is quite tall. Gasp is a wide-screen (16:9) place — it will show with black bars on the sides."
         );
       }
       // Grab a poster frame a second in.
@@ -302,7 +302,7 @@ export default function UploadForm() {
           type="checkbox"
           checked={mature}
           onChange={(e) => setMature(e.target.checked)}
-          className="mt-1 h-6 w-6 accent-[#1877f2]"
+          className="mt-1 h-6 w-6 accent-accent"
         />
         <span className="text-[15px]">
           <span className="font-semibold">This video has mature themes</span>
@@ -319,7 +319,7 @@ export default function UploadForm() {
           checked={rightsConfirmed}
           onChange={(e) => setRightsConfirmed(e.target.checked)}
           required
-          className="mt-1 h-6 w-6 accent-[#1877f2]"
+          className="mt-1 h-6 w-6 accent-accent"
         />
         <span className="text-[15px]">
           <span className="font-semibold">This is mine to share</span>
@@ -349,7 +349,7 @@ export default function UploadForm() {
         }
         className="min-h-16 rounded-xl bg-accent text-xl font-bold text-white disabled:opacity-40"
       >
-        {busy ? "Uploading…" : "Put it on Reely 🍿"}
+        {busy ? "Uploading…" : "Put it on Gasp"}
       </button>
     </form>
   );

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="afterglow" gradientUnits="userSpaceOnUse" x1="147" y1="132" x2="365" y2="380">
+      <stop offset="0" stop-color="#C043FF"/>
+      <stop offset="1" stop-color="#FF5C38"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#C043FF" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#C043FF" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="twist">
+      <rect width="512" height="512" fill="white"/>
+      <path d="M304 249 L296 306" fill="none" stroke="black" stroke-width="74" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="#0B0B10"/>
+  <rect width="512" height="512" rx="116" fill="url(#glow)"/>
+  <g fill="none" stroke="url(#afterglow)" stroke-width="56" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M283 154 A79 79 0 0 0 147 211 L147 301 A79 79 0 1 0 277 240"/>
+    <path d="M231 276 L365 276" mask="url(#twist)"/>
+  </g>
+</svg>

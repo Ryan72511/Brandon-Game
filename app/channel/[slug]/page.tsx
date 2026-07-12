@@ -86,7 +86,7 @@ export default async function ChannelPage({
         {channel.description && <p className="text-night-ink-soft">{channel.description}</p>}
         <p className="text-[14px] text-night-meta">
           {channel.isPrebuilt ? (
-            "A Reely original channel"
+            "A Gasp original channel"
           ) : channel.owner ? (
             <>
               Made by{" "}

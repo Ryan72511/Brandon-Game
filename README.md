@@ -1,6 +1,6 @@
-# 🍿 Reely — Tiny shows. Big feelings.
+# 🍿 Gasp — Tiny shows. Big feelings.
 
-Reely is a mobile-first streaming platform for **short, wide-screen (16:9) mini-shows** —
+Gasp is a mobile-first streaming platform for **short, wide-screen (16:9) mini-shows** —
 microdramas, one-minute comedies, tiny mysteries — think *TikTok's ease, Netflix's format,
 Facebook's friends*. Anyone can watch; anyone can flip into **Creating** mode and become
 a celebrated creator.
@@ -33,7 +33,7 @@ npm run setup      # creates SQLite DB, generates seed videos (needs ffmpeg), se
 npm run dev        # http://localhost:3000
 ```
 
-Demo sign-in: **`demo` / `reely123`** (all seeded users share that password).
+Demo sign-in: **`demo` / `gasp123`** (all seeded users share that password).
 
 Without ffmpeg, skip `media:generate` — the seed videos are committed under `media/`.
 
@@ -74,10 +74,10 @@ out of scope until the audience exists.
 
 ## iPhone app
 
-Reely ships as a responsive web app wrapped with **Capacitor** (a native
+Gasp ships as a responsive web app wrapped with **Capacitor** (a native
 WKWebView container) that loads the **live hosted site** over HTTPS — a real
 native app on your production API, not a static bundle. The Capacitor config
 lives in [`capacitor.config.ts`](capacitor.config.ts); the definitive build-and-
-submit guide (install, `REELY_APP_URL`, signing, privacy manifest, Archive →
+submit guide (install, `GASP_APP_URL`, signing, privacy manifest, Archive →
 App Store Connect) is in [`ios-wrapper/README.md`](ios-wrapper/README.md), and
 the product/policy submission playbook is in [`docs/APP_STORE.md`](docs/APP_STORE.md).

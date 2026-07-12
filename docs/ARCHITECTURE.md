@@ -1,4 +1,4 @@
-# Reely architecture — today, and at millions of users
+# Gasp architecture — today, and at millions of users
 
 ## Design principle
 
