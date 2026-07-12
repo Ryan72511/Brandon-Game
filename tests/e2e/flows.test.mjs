@@ -480,6 +480,54 @@ await step("forgot password: reset with the recovery code", async () => {
   await ctx.close();
 });
 
+await step("edit profile: change your face without creator mode", async () => {
+  await page.goto(BASE + "/you");
+  await page.click('a[href="/you/edit"]');
+  await page.waitForSelector("text=Your face");
+  // Pick a different face + color, save, and expect the confirmation.
+  await page.click('button:has-text("😎")');
+  await page.locator('button[aria-label^="Color"]').nth(2).click();
+  await page.click('button:has-text("Save")');
+  await page.waitForSelector("text=Saved! ✓");
+});
+
+await step("history and ratings pages show your activity", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 420, height: 880 } });
+  const p = await ctx.newPage();
+  await p.goto(BASE + "/login");
+  await p.click("text=Welcome back");
+  await p.fill('input[placeholder="like sunny_dan"]', "demo");
+  await p.fill('input[type="password"]', "gasp123");
+  await p.click('button:has-text("Sign in")');
+  await p.waitForURL(BASE + "/");
+  // Seeded demo user has watch history and ratings.
+  await p.goto(BASE + "/history");
+  await p.waitForSelector("text=/Watched (today|yesterday|\\d+ days ago)/");
+  await p.goto(BASE + "/ratings");
+  await p.waitForSelector("text=/Extra Butter|Popped|Burnt/");
+  await ctx.close();
+});
+
+await step("creator pins a demo reel and it shows on their page", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 420, height: 880 } });
+  const p = await ctx.newPage();
+  await p.goto(BASE + "/login");
+  await p.click("text=Welcome back");
+  await p.fill('input[placeholder="like sunny_dan"]', "the_dramatist");
+  await p.fill('input[type="password"]', "gasp123");
+  await p.click('button:has-text("Sign in")');
+  await p.waitForURL(BASE + "/");
+  await p.goto(BASE + "/studio/profile");
+  await p.waitForSelector("select");
+  await p.selectOption("select", { index: 1 }); // first published video
+  await p.click('button:has-text("Save")');
+  await p.waitForSelector("text=Saved! ✓");
+  await p.goto(BASE + "/creator/the_dramatist");
+  await p.waitForSelector("text=Meet the maker");
+  await p.waitForSelector("video");
+  await ctx.close();
+});
+
 await step("signup requires a valid, unique email", async () => {
   const ctx = await browser.newContext();
   const req = ctx.request;

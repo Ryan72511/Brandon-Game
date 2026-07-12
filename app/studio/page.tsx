@@ -8,21 +8,64 @@ import VideoCard from "@/components/VideoCard";
 
 export const dynamic = "force-dynamic";
 
-// Creating-mode home: your videos, their scores, and the big Add button.
+// Creating-mode home: a little dashboard of how your videos are doing,
+// plus the big Add button and your video list.
 export default async function StudioPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/studio");
 
-  const rows = await prisma.video.findMany({
-    where: { creatorId: user.id },
-    orderBy: { createdAt: "desc" },
-    select: { id: true },
-  });
+  const [rows, totals, commentCount, topRow] = await Promise.all([
+    prisma.video.findMany({
+      where: { creatorId: user.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    }),
+    // One aggregate over all their videos — no per-video looping.
+    prisma.video.aggregate({
+      where: { creatorId: user.id },
+      _sum: {
+        viewCount: true,
+        burntCount: true,
+        poppedCount: true,
+        butterCount: true,
+      },
+    }),
+    prisma.comment.count({ where: { video: { creatorId: user.id } } }),
+    // Their best published video with at least one rating.
+    prisma.video.findFirst({
+      where: {
+        creatorId: user.id,
+        status: "published",
+        OR: [
+          { burntCount: { gt: 0 } },
+          { poppedCount: { gt: 0 } },
+          { butterCount: { gt: 0 } },
+        ],
+      },
+      orderBy: { popcornScore: "desc" },
+      select: { id: true, popcornScore: true },
+    }),
+  ]);
+
   const videos = await getFeedVideos(
     rows.map((r) => r.id),
     user.id
   );
-  const totalViews = videos.reduce((sum, v) => sum + v.viewCount, 0);
+
+  const totalViews = totals._sum.viewCount ?? 0;
+  const burnt = totals._sum.burntCount ?? 0;
+  const popped = totals._sum.poppedCount ?? 0;
+  const butter = totals._sum.butterCount ?? 0;
+  const totalRatings = burnt + popped + butter;
+
+  const topVideo = topRow ? videos.find((v) => v.id === topRow.id) : undefined;
+
+  const stats = [
+    { value: videos.length, label: "videos" },
+    { value: totalViews, label: "views" },
+    { value: totalRatings, label: "ratings" },
+    { value: commentCount, label: "comments" },
+  ];
 
   return (
     <div className="flex flex-col gap-5 p-4">
@@ -35,25 +78,83 @@ export default async function StudioPage() {
         ＋ Add a video
       </Link>
 
-      <div className="flex gap-3">
-        <div className="flex-1 rounded-xl border border-line bg-surface p-4 text-center shadow-card">
-          <p className="text-3xl font-bold">{videos.length}</p>
-          <p className="text-[14px] text-ink-soft">videos</p>
+      {/* How you're doing: totals across all their videos */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-bold">How you&apos;re doing</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="rounded-xl border border-line bg-surface p-4 text-center shadow-card"
+            >
+              <p className="text-3xl font-bold">{s.value.toLocaleString()}</p>
+              <p className="text-[14px] text-ink-soft">{s.label}</p>
+            </div>
+          ))}
         </div>
-        <div className="flex-1 rounded-xl border border-line bg-surface p-4 text-center shadow-card">
-          <p className="text-3xl font-bold">{totalViews}</p>
-          <p className="text-[14px] text-ink-soft">views</p>
-        </div>
-        <Link
-          href="/studio/profile"
-          className="flex flex-1 flex-col items-center justify-center rounded-xl border border-line bg-surface p-4 text-center shadow-card"
-        >
-          <p className="text-3xl" aria-hidden>
-            ✏️
+        <p className="text-center text-[14px] text-ink-soft">
+          Tap any video for its full analytics.
+        </p>
+      </section>
+
+      {/* Audience love: how all their ratings split up */}
+      {totalRatings > 0 && (
+        <section className="rounded-xl border border-line bg-surface p-4 shadow-card">
+          <p className="mb-3 font-bold">Audience love</p>
+          <div className="flex h-4 w-full overflow-hidden rounded-full" aria-hidden>
+            {butter > 0 && (
+              <div
+                className="bg-gold"
+                style={{ width: `${(100 * butter) / totalRatings}%` }}
+              />
+            )}
+            {popped > 0 && (
+              <div
+                className="bg-accent"
+                style={{ width: `${(100 * popped) / totalRatings}%` }}
+              />
+            )}
+            {burnt > 0 && (
+              <div
+                className="border border-line bg-surface-2"
+                style={{ width: `${(100 * burnt) / totalRatings}%` }}
+              />
+            )}
+          </div>
+          <p className="mt-2 text-[14px] text-ink-soft">
+            🧈 {butter.toLocaleString()} · 🍿 {popped.toLocaleString()} · 🔥{" "}
+            {burnt.toLocaleString()}
           </p>
-          <p className="text-[14px] font-semibold text-ink-soft">Creator page</p>
-        </Link>
-      </div>
+        </section>
+      )}
+
+      {/* Top video: their highest popcorn score */}
+      {topRow && topVideo && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-bold">
+            Your top video — {topRow.popcornScore}% popped
+          </h2>
+          <VideoCard
+            id={topVideo.id}
+            title={topVideo.title}
+            thumb={topVideo.thumb}
+            durationSec={topVideo.durationSec}
+            score={topVideo.score}
+            creatorName={`${topVideo.viewCount.toLocaleString()} views · ${topVideo.commentCount.toLocaleString()} comments`}
+            href={`/studio/video/${topVideo.id}`}
+          />
+        </section>
+      )}
+
+      <Link
+        href="/studio/profile"
+        className="flex min-h-14 items-center justify-between rounded-xl border border-line bg-surface p-4 shadow-card"
+      >
+        <span className="font-semibold">✏️ Your creator page</span>
+        <span className="text-xl text-ink-soft" aria-hidden>
+          ›
+        </span>
+      </Link>
 
       <Link
         href="/studio/series"

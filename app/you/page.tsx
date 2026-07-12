@@ -36,14 +36,20 @@ export default async function YouPage() {
     <div className="flex flex-col gap-5 p-4">
       <PageHeader title="You" />
 
-      <div className="flex items-center gap-4 rounded-xl border border-line bg-surface p-5 shadow-card">
+      <Link
+        href="/you/edit"
+        className="flex items-center gap-4 rounded-xl border border-line bg-surface p-5 shadow-card"
+      >
         <Avatar emoji={user.avatarEmoji} color={user.avatarColor} size={64} />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-2xl font-bold">{user.displayName}</p>
           <p className="text-ink-soft">@{user.username}</p>
           {user.bio && <p className="mt-1 text-[15px]">{user.bio}</p>}
         </div>
-      </div>
+        <span className="rounded-full border-2 border-line px-3 py-1 text-[14px] font-bold text-ink-soft">
+          Edit
+        </span>
+      </Link>
 
       <ModeSwitch mode={user.mode} />
 
@@ -88,6 +94,30 @@ export default async function YouPage() {
           )}
           <span className="text-ink-soft">
             {friendCount} {friendCount === 1 ? "friend" : "friends"} ›
+          </span>
+        </Link>
+        <Link
+          href="/history"
+          className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-4 shadow-card"
+        >
+          <span className="text-2xl" aria-hidden>
+            🕘
+          </span>
+          <span className="flex-1 font-bold">Recently watched</span>
+          <span className="text-ink-soft" aria-hidden>
+            ›
+          </span>
+        </Link>
+        <Link
+          href="/ratings"
+          className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-4 shadow-card"
+        >
+          <span className="text-2xl" aria-hidden>
+            🍿
+          </span>
+          <span className="flex-1 font-bold">Your ratings</span>
+          <span className="text-ink-soft" aria-hidden>
+            ›
           </span>
         </Link>
         <Link

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function CreatorProfileForm({
   initial,
   username,
+  reelChoices = [],
 }: {
   initial: {
     displayName: string;
@@ -13,8 +14,10 @@ export default function CreatorProfileForm({
     creatorAbout: string;
     creatorProcess: string;
     creatorTools: string[];
+    featuredVideoId?: string;
   };
   username: string;
+  reelChoices?: { id: string; title: string }[];
 }) {
   const router = useRouter();
   const [displayName, setDisplayName] = useState(initial.displayName);
@@ -22,6 +25,7 @@ export default function CreatorProfileForm({
   const [creatorAbout, setCreatorAbout] = useState(initial.creatorAbout);
   const [creatorProcess, setCreatorProcess] = useState(initial.creatorProcess);
   const [toolsText, setToolsText] = useState(initial.creatorTools.join(", "));
+  const [featuredVideoId, setFeaturedVideoId] = useState(initial.featuredVideoId ?? "");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -41,6 +45,7 @@ export default function CreatorProfileForm({
         creatorAbout,
         creatorProcess,
         creatorTools: toolsText.split(",").map((t) => t.trim()).filter(Boolean),
+        featuredVideoId,
       }),
     });
     setBusy(false);
@@ -94,6 +99,28 @@ export default function CreatorProfileForm({
           className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
         />
       </label>
+      {reelChoices.length > 0 && (
+        <label className="flex flex-col gap-1 font-semibold">
+          Demo reel <span className="font-normal text-ink-soft">(optional)</span>
+          <select
+            value={featuredVideoId}
+            onChange={(e) => setFeaturedVideoId(e.target.value)}
+            className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+          >
+            <option value="">None — no video on my page</option>
+            {reelChoices.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.title}
+              </option>
+            ))}
+          </select>
+          <span className="font-normal text-[13px] text-ink-soft">
+            Pinned to the top of your creator page — a hello, a trailer, or your
+            favorite episode.
+          </span>
+        </label>
+      )}
+
       <label className="flex flex-col gap-1 font-semibold">
         Your process
         <textarea

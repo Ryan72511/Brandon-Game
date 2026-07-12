@@ -59,6 +59,15 @@ export default async function CreatorPage({
   );
   const tools = parseTags(creator.creatorTools);
   const isSelf = viewer?.id === creator.id;
+
+  // The optional demo reel — an intro video pinned to the top of the page.
+  // Resolved through getFeedVideos so removed/mature/blocked rules apply; if
+  // it doesn't survive the filter (or was deleted), the section just skips.
+  const featured = creator.featuredVideoId
+    ? (await getFeedVideos([creator.featuredVideoId], viewer?.id ?? null)).find(
+        (v) => v.creator.username === creator.username
+      )
+    : undefined;
   const blocked = viewer
     ? Boolean(
         await prisma.block.findUnique({
@@ -102,6 +111,29 @@ export default async function CreatorPage({
           <p className="rounded-xl bg-bg p-3 text-[15px] text-ink-soft">
             You&apos;ve blocked this creator — their videos won&apos;t show up for you anywhere.
           </p>
+        )}
+
+        {featured && (
+          <section className="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              poster={featured.thumb}
+              className="aspect-video w-full bg-bg"
+            >
+              {featured.src.endsWith(".mp4") && (
+                <source src={featured.src.replace(/\.mp4$/, ".webm")} type="video/webm" />
+              )}
+              <source
+                src={featured.src}
+                type={featured.src.endsWith(".webm") ? "video/webm" : "video/mp4"}
+              />
+            </video>
+            <p className="px-4 py-3 text-[15px] text-ink-soft">
+              🎞️ <span className="font-bold text-ink">Meet the maker</span> — {featured.title}
+            </p>
+          </section>
         )}
 
         {creator.creatorAbout && (

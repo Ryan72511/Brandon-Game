@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { withUser, cleanString } from "@/lib/api";
+import { withUser, cleanString, jsonError } from "@/lib/api";
+import { AVATAR_COLORS } from "@/lib/constants";
 
 export const PATCH = withUser(async (user, req) => {
   const body = await req.json().catch(() => ({}));
@@ -14,6 +15,24 @@ export const PATCH = withUser(async (user, req) => {
   if (typeof body.avatarEmoji === "string") {
     const v = cleanString(body.avatarEmoji, 8);
     if (v) data.avatarEmoji = v;
+  }
+  if (typeof body.avatarColor === "string") {
+    // Colors come from the fixed palette only — no arbitrary CSS values.
+    if ((AVATAR_COLORS as readonly string[]).includes(body.avatarColor)) {
+      data.avatarColor = body.avatarColor;
+    }
+  }
+  if (typeof body.featuredVideoId === "string") {
+    // The demo reel must be one of your own published videos ("" clears it).
+    const id = cleanString(body.featuredVideoId, 40);
+    if (id) {
+      const own = await prisma.video.findFirst({
+        where: { id, creatorId: user.id, status: "published" },
+        select: { id: true },
+      });
+      if (!own) return jsonError("Pick one of your own published videos.", 400);
+    }
+    data.featuredVideoId = id;
   }
   if (typeof body.creatorAbout === "string") data.creatorAbout = cleanString(body.creatorAbout, 2000);
   if (typeof body.creatorProcess === "string") data.creatorProcess = cleanString(body.creatorProcess, 2000);
