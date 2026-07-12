@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/session";
-import { jsonError, cleanString, rateLimitByIp, rateLimitByAccount } from "@/lib/api";
+import {
+  jsonError,
+  cleanString,
+  rateLimitByIp,
+  rateLimitByAccount,
+  recordAccountFailure,
+} from "@/lib/api";
 import { verifyRecoveryCode, generateRecoveryCode, hashRecoveryCode } from "@/lib/recovery";
 
 // Reset a forgotten password with the recovery code shown at signup. No
@@ -16,9 +22,6 @@ export async function POST(req: Request) {
   const recoveryCode = cleanString(body.recoveryCode, 60);
   const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
 
-  const acctLimited = rateLimitByAccount(username);
-  if (acctLimited) return acctLimited;
-
   if (!username || !recoveryCode) {
     return jsonError("Enter your username and recovery code.", 400);
   }
@@ -29,6 +32,13 @@ export async function POST(req: Request) {
   const user = await prisma.user.findUnique({ where: { username } });
   // Same generic message whether the user or the code is wrong — no oracle.
   if (!user || !user.recoveryCodeHash || !verifyRecoveryCode(recoveryCode, user.recoveryCodeHash)) {
+    // Verify FIRST, throttle only on failure: a correct recovery code is never
+    // rate-limited, so an attacker can't lock the real owner out by flooding
+    // their username with wrong codes. Wrong tries still burn the account's
+    // budget, keeping the ~40-bit code out of online-grinding range.
+    const acctLimited = rateLimitByAccount(username);
+    if (acctLimited) return acctLimited;
+    recordAccountFailure(username);
     return jsonError("That username and recovery code don't match.", 401);
   }
   if (user.suspended) {

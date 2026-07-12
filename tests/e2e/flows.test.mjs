@@ -477,6 +477,70 @@ await step("forgot password: reset with the recovery code", async () => {
   await ctx.close();
 });
 
+await step("brute-force wrong guesses can't lock the real owner out", async () => {
+  // A unique X-Forwarded-For gives this test its own per-IP bucket, so the
+  // shared suite traffic on "local" doesn't interfere with the assertion.
+  const ctx = await browser.newContext();
+  const req = ctx.request;
+  const u = `dos_${stamp}`;
+  const ip = "203.0.113.7";
+  const hx = { "x-forwarded-for": ip };
+  const su = await req.post(BASE + "/api/auth/signup", {
+    headers: hx,
+    data: { username: u, displayName: "DoS Target", birthYear: 1990, password: "right1234" },
+  });
+  assert.equal(su.ok(), true, "signup should succeed");
+  // Attacker floods the victim's public username with wrong passwords, past
+  // the burst so the account bucket empties (later tries even get 429'd).
+  for (let i = 0; i < 9; i++) {
+    await req.post(BASE + "/api/auth/login", {
+      headers: hx,
+      data: { username: u, password: "definitely-wrong" },
+    });
+  }
+  // The real owner's CORRECT password still logs in — verify-first ordering
+  // means a valid credential is never subject to the per-account throttle.
+  const ok = await req.post(BASE + "/api/auth/login", {
+    headers: hx,
+    data: { username: u, password: "right1234" },
+  });
+  assert.equal(ok.status(), 200, "correct password must succeed despite the wrong-guess flood");
+  await ctx.close();
+});
+
+await step("changing password logs out other sessions", async () => {
+  const u = `pw_${stamp}`;
+  const ip = "203.0.113.8";
+  const hx = { "x-forwarded-for": ip };
+  const authed = (r) => r.get(BASE + "/api/notifications?count=1");
+  // Session A: the old/other session (imagine a stolen or shared cookie).
+  const ctxA = await browser.newContext();
+  const rA = ctxA.request;
+  const su = await rA.post(BASE + "/api/auth/signup", {
+    headers: hx,
+    data: { username: u, displayName: "PW User", birthYear: 1990, password: "orig1234" },
+  });
+  assert.equal(su.ok(), true, "signup should succeed");
+  assert.equal((await authed(rA)).status(), 200, "session A starts valid");
+  // Session B: the real owner signs in fresh and changes the password.
+  const ctxB = await browser.newContext();
+  const rB = ctxB.request;
+  await rB.post(BASE + "/api/auth/login", {
+    headers: hx,
+    data: { username: u, password: "orig1234" },
+  });
+  const chg = await rB.post(BASE + "/api/account/password", {
+    headers: hx,
+    data: { currentPassword: "orig1234", newPassword: "changed99" },
+  });
+  assert.equal(chg.ok(), true, "password change should succeed");
+  // The actor (B) stays signed in; every other session (A) is evicted.
+  assert.equal((await authed(rB)).status(), 200, "actor session stays signed in");
+  assert.equal((await authed(rA)).status(), 401, "other session is logged out");
+  await ctxA.close();
+  await ctxB.close();
+});
+
 await step("delete account, then the login is gone", async () => {
   await page.goto(BASE + "/you");
   await page.click('button:has-text("Delete account")');

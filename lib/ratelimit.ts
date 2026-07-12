@@ -32,10 +32,7 @@ export function clientIp(req: Request): string {
   return fwd ? fwd.split(",")[0].trim() : "local";
 }
 
-// Returns true when the request is allowed.
-export function allowRequest(key: string, limit: RateLimit): boolean {
-  const now = Date.now();
-  const capacity = limit.burst ?? limit.perMinute;
+function getBucket(key: string, capacity: number, now: number): Bucket {
   let bucket = buckets.get(key);
   if (!bucket) {
     if (buckets.size >= MAX_BUCKETS) {
@@ -50,11 +47,41 @@ export function allowRequest(key: string, limit: RateLimit): boolean {
     bucket = { tokens: capacity, refilledAt: now };
     buckets.set(key, bucket);
   }
-  // Refill continuously at perMinute rate.
+  return bucket;
+}
+
+function refill(bucket: Bucket, limit: RateLimit, now: number) {
+  const capacity = limit.burst ?? limit.perMinute;
   const elapsed = (now - bucket.refilledAt) / 60_000;
   bucket.tokens = Math.min(capacity, bucket.tokens + elapsed * limit.perMinute);
   bucket.refilledAt = now;
+}
+
+// Consume-on-check: refill, and if a token is available take it. Use for
+// per-request limits (writes, uploads, IP floods).
+export function allowRequest(key: string, limit: RateLimit): boolean {
+  const now = Date.now();
+  const bucket = getBucket(key, limit.burst ?? limit.perMinute, now);
+  refill(bucket, limit, now);
   if (bucket.tokens < 1) return false;
   bucket.tokens -= 1;
   return true;
+}
+
+// Peek without consuming — for failure-counted auth limits, so a legitimate
+// login/reset with the right credentials never spends a token (an attacker
+// can't lock a victim out by guessing their username).
+export function isBlocked(key: string, limit: RateLimit): boolean {
+  const now = Date.now();
+  const bucket = getBucket(key, limit.burst ?? limit.perMinute, now);
+  refill(bucket, limit, now);
+  return bucket.tokens < 1;
+}
+
+// Record one failed attempt against a key (spends a token).
+export function recordFailure(key: string, limit: RateLimit): void {
+  const now = Date.now();
+  const bucket = getBucket(key, limit.burst ?? limit.perMinute, now);
+  refill(bucket, limit, now);
+  bucket.tokens = Math.max(0, bucket.tokens - 1);
 }

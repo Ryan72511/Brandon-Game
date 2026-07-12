@@ -1,17 +1,37 @@
 import { randomInt, scryptSync, timingSafeEqual, randomBytes } from "node:crypto";
 
-// A friendly recovery code: three short words + two digits, e.g.
-// "sunny-otter-glow-47". Easy to write down, hard to guess (~10^15 space).
+// A friendly recovery code: four short words + a three-digit number, e.g.
+// "sunny-otter-glow-maple-472". Easy to write down and read back, but drawn
+// from a ~180-word list so the space is ~180^4 * 900 ≈ 9.4e11 (~40 bits).
+// With login/reset throttled to a few failed tries a minute per account,
+// online grinding is infeasible (millennia), and the code is scrypt-hashed
+// at rest so a DB leak still can't reveal it cheaply.
 const WORDS = [
   "sunny", "otter", "glow", "maple", "river", "cloud", "tiger", "pine", "wave",
   "ember", "misty", "cocoa", "lunar", "fox", "reef", "clover", "aspen", "dune",
   "willow", "flint", "harbor", "meadow", "quartz", "raven", "sage", "thistle",
   "violet", "wren", "zephyr", "birch", "coral", "delta", "frost", "ivy", "juno",
+  "amber", "brook", "cedar", "daisy", "eagle", "fern", "grove", "hazel", "iris",
+  "jade", "kite", "lily", "moss", "nova", "oak", "peach", "quill", "robin",
+  "storm", "teal", "umber", "vale", "wolf", "yarn", "zinc", "acorn", "bloom",
+  "cove", "drift", "echo", "fable", "glade", "heron", "inlet", "juniper", "koala",
+  "lotus", "marsh", "nectar", "opal", "petal", "reed", "spruce", "tulip", "vine",
+  "wisp", "arbor", "basil", "comet", "dawn", "elm", "fjord", "gale", "hollow",
+  "isle", "jolt", "kelp", "larch", "mint", "north", "orbit", "prism", "quest",
+  "ridge", "sable", "tide", "ulan", "verve", "wheat", "yew", "azure", "brisk",
+  "crest", "dell", "emberly", "flare", "gust", "hush", "ionic", "jetty", "knoll",
+  "lark", "mica", "nook", "onyx", "plume", "quartzy", "rill", "spire", "trove",
+  "unity", "vista", "wharf", "yonder", "amberly", "beacon", "cinder", "dapple",
+  "estuary", "falcon", "granite", "harvest", "island", "jasper", "kindle", "lagoon",
+  "mallow", "nimbus", "olive", "pebble", "quiver", "russet", "summit", "timber",
+  "upland", "velvet", "willowy", "yellow", "aurora", "bramble", "canyon", "dewdrop",
+  "everest", "fennel", "glacier", "hazelnut", "indigo", "jubilee", "kestrel", "lantern",
+  "marigold", "nutmeg", "orchid", "poppy", "quince", "ripple", "saffron", "thicket",
 ];
 
 export function generateRecoveryCode(): string {
   const w = () => WORDS[randomInt(WORDS.length)];
-  return `${w()}-${w()}-${w()}-${randomInt(10, 100)}`;
+  return `${w()}-${w()}-${w()}-${w()}-${randomInt(100, 1000)}`;
 }
 
 export function hashRecoveryCode(code: string): string {

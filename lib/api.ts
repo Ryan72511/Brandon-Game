@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
-import { allowRequest, clientIp, LIMITS, type RateLimit } from "@/lib/ratelimit";
+import {
+  allowRequest,
+  isBlocked,
+  recordFailure,
+  clientIp,
+  LIMITS,
+  type RateLimit,
+} from "@/lib/ratelimit";
 
 export function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -45,12 +52,28 @@ export function rateLimitByIp(req: Request, tier: RateLimit = LIMITS.authIp): Re
 // by the username being attacked, so guessing one account's password can't
 // be sped up by switching IPs, and one account's attempts don't affect
 // anyone else on the same network.
-export function rateLimitByAccount(username: string, tier: RateLimit = LIMITS.auth): Response | null {
+//
+// Failure-only: this PEEKS the bucket (never consumes) so a legitimate owner
+// with the right password/code is never throttled. Only genuinely wrong
+// attempts spend a token, via recordAccountFailure() below. That closes the
+// account-lockout DoS where an attacker floods a victim's username with junk
+// guesses to keep the victim out of their own account.
+function accountKey(username: string, tier: RateLimit): string {
   const key = username.trim().toLowerCase() || "unknown";
-  if (!allowRequest(`acct:${key}:${tier.perMinute}`, tier)) {
+  return `acct:${key}:${tier.perMinute}`;
+}
+
+export function rateLimitByAccount(username: string, tier: RateLimit = LIMITS.auth): Response | null {
+  if (isBlocked(accountKey(username, tier), tier)) {
     return jsonError("Too many tries for this account — wait a minute.", 429);
   }
   return null;
+}
+
+// Call ONLY on a failed credential/recovery-code check — spends one token
+// against the account's brute-force budget.
+export function recordAccountFailure(username: string, tier: RateLimit = LIMITS.auth): void {
+  recordFailure(accountKey(username, tier), tier);
 }
 
 export function cleanString(v: unknown, maxLen: number): string {

@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createSession, verifyPassword } from "@/lib/session";
-import { jsonError, cleanString, rateLimitByIp, rateLimitByAccount } from "@/lib/api";
+import {
+  jsonError,
+  cleanString,
+  rateLimitByIp,
+  rateLimitByAccount,
+  recordAccountFailure,
+} from "@/lib/api";
 
 export async function POST(req: Request) {
   const ipLimited = rateLimitByIp(req);
@@ -9,11 +15,18 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const username = cleanString(body.username, 20).toLowerCase();
   const password = typeof body.password === "string" ? body.password : "";
-  const acctLimited = rateLimitByAccount(username);
-  if (acctLimited) return acctLimited;
 
+  // Verify FIRST, then throttle only on failure. A correct password is never
+  // subject to the per-account limit, so an attacker flooding a victim's
+  // username with wrong guesses can never lock the real owner out of their own
+  // account — the DoS the old "limit-before-verify" ordering allowed. Wrong
+  // guesses still burn the account's budget, so brute-force stays throttled.
+  // (The per-IP ceiling above caps total verify volume, bounding scrypt cost.)
   const user = await prisma.user.findUnique({ where: { username } });
   if (!user || !verifyPassword(password, user.passwordHash)) {
+    const acctLimited = rateLimitByAccount(username);
+    if (acctLimited) return acctLimited;
+    recordAccountFailure(username);
     return jsonError("Wrong username or password.", 401);
   }
   if (user.suspended) {
