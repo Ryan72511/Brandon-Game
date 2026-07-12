@@ -56,6 +56,11 @@ export const getCurrentUser = cache(async () => {
     await prisma.session.delete({ where: { token } }).catch(() => {});
     return null;
   }
+  // Suspended mid-session: treat as signed out even if a session row lingers.
+  if (session.user.suspended) {
+    await prisma.session.deleteMany({ where: { userId: session.userId } }).catch(() => {});
+    return null;
+  }
   return session.user;
 });
 

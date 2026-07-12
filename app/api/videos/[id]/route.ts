@@ -6,6 +6,7 @@ import { withUser, jsonError, cleanString } from "@/lib/api";
 import { invalidateCandidateCache } from "@/lib/recs";
 import { CATEGORIES } from "@/lib/constants";
 import { MEDIA_ROOT } from "@/lib/storage";
+import { reviewModeEnabled } from "@/lib/visibility";
 
 type Params = [{ params: Promise<{ id: string }> }];
 
@@ -13,9 +14,17 @@ type Params = [{ params: Promise<{ id: string }> }];
 // client sends gets updated.
 export const PATCH = withUser<Params>(async (user, req, { params }) => {
   const { id } = await params;
-  const video = await prisma.video.findUnique({ where: { id }, select: { creatorId: true } });
+  const video = await prisma.video.findUnique({
+    where: { id },
+    select: { creatorId: true, status: true },
+  });
   if (!video) return jsonError("Video not found.", 404);
   if (video.creatorId !== user.id) return jsonError("This isn't your video.", 403);
+  // A moderator-removed video is locked — the creator can edit metadata but
+  // cannot republish it themselves. Contact support to appeal.
+  if (video.status === "removed") {
+    return jsonError("This video was removed by our moderators. Contact support@reely.app.", 403);
+  }
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const data: {
@@ -55,7 +64,10 @@ export const PATCH = withUser<Params>(async (user, req, { params }) => {
     if (body.status !== "draft" && body.status !== "published") {
       return jsonError("Status can be draft or published.", 400);
     }
-    data.status = body.status;
+    // When review mode is on, publishing goes through moderation — the
+    // creator can't self-publish straight to public.
+    data.status =
+      body.status === "published" && reviewModeEnabled() ? "pending" : body.status;
   }
   if (body.captionsVtt !== undefined) data.captionsVtt = cleanString(body.captionsVtt, 20000);
 
@@ -85,6 +97,12 @@ export const DELETE = withUser<Params>(async (user, _req, { params }) => {
   if (video.creatorId !== user.id) return jsonError("This isn't your video.", 403);
 
   // Relations (ratings, comments, watch events, channel refs) cascade.
+  // Reports reference the video by plain id (no FK), so close any open ones
+  // rather than leave them orphaned in the moderation queue.
+  await prisma.report.updateMany({
+    where: { videoId: id, status: "open" },
+    data: { status: "resolved", resolution: "video_deleted", resolvedAt: new Date() },
+  });
   await prisma.video.delete({ where: { id } });
   await unlinkUploadedMedia(video.src);
   await unlinkUploadedMedia(video.thumb);

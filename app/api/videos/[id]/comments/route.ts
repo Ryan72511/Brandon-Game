@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withUser, jsonError, cleanString } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
+import { isPublicVideo } from "@/lib/visibility";
 
 type Params = [{ params: Promise<{ id: string }> }];
 
@@ -12,9 +13,20 @@ const PAGE_SIZE = 30;
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const cursor = new URL(req.url).searchParams.get("cursor");
+  // No comments surface for a video that isn't publicly watchable (draft,
+  // pending, removed, or suspended creator) unless you're the creator.
+  const video = await prisma.video.findUnique({
+    where: { id },
+    select: { status: true, publishAt: true, creatorId: true, creator: { select: { suspended: true } } },
+  });
+  if (!video) return NextResponse.json({ comments: [], nextCursor: null });
+  const viewer = await getCurrentUser();
+  const watchable =
+    (isPublicVideo(video) && !video.creator.suspended) || video.creatorId === viewer?.id;
+  if (!watchable) return NextResponse.json({ comments: [], nextCursor: null });
+
   // Suspended users' comments are hidden for everyone; blocked users'
   // comments are hidden for the viewer who blocked them.
-  const viewer = await getCurrentUser();
   const blocked = viewer
     ? (
         await prisma.block.findMany({

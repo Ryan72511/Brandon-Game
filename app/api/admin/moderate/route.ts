@@ -12,6 +12,19 @@ async function resolveReport(reportId: unknown, resolution: string) {
   });
 }
 
+// Closes EVERY open report on a target once it's actioned — so acting on one
+// report clears the others about the same video/creator/comment instead of
+// leaving orphaned open rows in the queue.
+async function resolveReportsForTarget(
+  where: { videoId?: string; creatorId?: string; commentId?: string },
+  resolution: string
+) {
+  await prisma.report.updateMany({
+    where: { ...where, status: "open" },
+    data: { status: "resolved", resolution, resolvedAt: new Date() },
+  });
+}
+
 // POST { action, ... } — every moderation decision goes through here.
 // Admin-only; every branch answers { ok: true } on success.
 export const POST = withUser(async (user, req) => {
@@ -35,7 +48,9 @@ export const POST = withUser(async (user, req) => {
     });
     if (updated.count === 0) return jsonError("Video not found.", 404);
     invalidateCandidateCache();
-    if (action === "remove_video") await resolveReport(body.reportId, "video_removed");
+    if (action === "remove_video") {
+      await resolveReportsForTarget({ videoId }, "video_removed");
+    }
     return NextResponse.json({ ok: true });
   }
 
@@ -63,7 +78,7 @@ export const POST = withUser(async (user, req) => {
     // Sign them out everywhere immediately.
     await prisma.session.deleteMany({ where: { userId: target.id } });
     invalidateCandidateCache();
-    await resolveReport(body.reportId, "creator_suspended");
+    await resolveReportsForTarget({ creatorId: target.id }, "creator_suspended");
     return NextResponse.json({ ok: true });
   }
 
@@ -84,7 +99,7 @@ export const POST = withUser(async (user, req) => {
     // Idempotent: the comment may already be gone (deleted, or removed via
     // another report) — resolving the report is still the right outcome.
     await prisma.comment.deleteMany({ where: { id: commentId } });
-    await resolveReport(body.reportId, "comment_removed");
+    await resolveReportsForTarget({ commentId }, "comment_removed");
     return NextResponse.json({ ok: true });
   }
 

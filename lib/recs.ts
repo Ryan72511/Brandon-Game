@@ -13,6 +13,7 @@ type CandidateVideo = {
   popcornScore: number;
   viewCount: number;
   createdAt: Date;
+  mature: boolean;
 };
 
 const SAVE_WEIGHT = 3;
@@ -31,7 +32,7 @@ async function getCandidates(): Promise<CandidateVideo[]> {
   }
   const rows = await prisma.video.findMany({
     where: publicVideoWhere(),
-    select: { id: true, category: true, tags: true, popcornScore: true, viewCount: true, createdAt: true },
+    select: { id: true, category: true, tags: true, popcornScore: true, viewCount: true, createdAt: true, mature: true },
     orderBy: { createdAt: "desc" },
     take: CANDIDATE_CAP,
   });
@@ -210,8 +211,10 @@ export async function recommendForChannel(channelId: string, limit = 12): Promis
   const exclude = new Set(existing.map((e) => e.videoId));
   const candidates = await getCandidates();
   const now = Date.now();
+  // Channel suggestions never surface mature videos — a kids channel must
+  // not be handed grown-up content to add.
   return candidates
-    .filter((c) => !exclude.has(c.id))
+    .filter((c) => !exclude.has(c.id) && !c.mature)
     .map((c) => ({ id: c.id, score: scoreCandidate(taste, c, now) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)

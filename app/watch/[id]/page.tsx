@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { recommendForUser } from "@/lib/recs";
 import { getChart } from "@/lib/charts";
-import { isPublicVideo } from "@/lib/visibility";
+import { isPublicVideo, publicVideoWhere } from "@/lib/visibility";
 import { getFeedVideos, getMyChannels } from "@/lib/data";
 import WatchFeed from "@/components/watch/WatchFeed";
 
@@ -41,19 +41,35 @@ export default async function WatchPage({
   const visible =
     (isPublicVideo(video) && !video.creator.suspended) || video.creatorId === user?.id;
   if (!visible) notFound();
+  // A blocked creator's video 404s for the blocker too — otherwise the feed
+  // filter would strip it and silently show a different video.
+  if (user && video.creatorId !== user.id) {
+    const blocked = await prisma.block.findUnique({
+      where: { blockerId_blockedId: { blockerId: user.id, blockedId: video.creatorId } },
+    });
+    if (blocked) notFound();
+  }
 
   let ids: string[] = [id];
   if (ch) {
     const channel = await prisma.channel.findUnique({
       where: { slug: ch },
-      include: { videos: { orderBy: { addedAt: "desc" }, select: { videoId: true } } },
+      select: { id: true, kind: true },
     });
     if (channel) {
       // The weekly channel has no saved rows — its contents ARE the chart.
+      // Filter the saved rows through public visibility so a removed or
+      // suspended-creator video can't ride the channel swipe chain.
       const channelIds =
         channel.kind === "weekly"
           ? (await getChart("weekly", 20)).map((r) => r.videoId)
-          : channel.videos.map((v) => v.videoId);
+          : (
+              await prisma.channelVideo.findMany({
+                where: { channelId: channel.id, video: publicVideoWhere() },
+                orderBy: { addedAt: "desc" },
+                select: { videoId: true },
+              })
+            ).map((v) => v.videoId);
       // Start at the shared video, keep the channel's order after it.
       ids = [id, ...channelIds.filter((v) => v !== id)];
     }

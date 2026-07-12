@@ -394,6 +394,30 @@ await step("moderator removes the reported video", async () => {
   await page.waitForSelector("text=That one's not showing");
 });
 
+await step("creator cannot republish a moderator-removed video", async () => {
+  // captionedWatchUrl's video was removed by the moderator above. Signed in
+  // as its creator (the_dramatist), PATCH status:published must be refused.
+  const ctx = await browser.newContext({ viewport: { width: 420, height: 880 } });
+  const p = await ctx.newPage();
+  await p.goto(BASE + "/login");
+  await p.click("text=Welcome back");
+  await p.fill('input[placeholder="like sunny_dan"]', "the_dramatist");
+  await p.fill('input[type="password"]', "reely123");
+  await p.click('button:has-text("Sign in")');
+  await p.waitForURL(BASE + "/");
+  const videoId = new URL(captionedWatchUrl).pathname.split("/")[2];
+  const status = await p.evaluate(async (id) => {
+    const res = await fetch(`/api/videos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "published" }),
+    });
+    return res.status;
+  }, videoId);
+  assert.equal(status, 403, `expected 403 republishing removed video, got ${status}`);
+  await ctx.close();
+});
+
 await step("delete account, then the login is gone", async () => {
   await page.goto(BASE + "/you");
   await page.click('button:has-text("Delete account")');

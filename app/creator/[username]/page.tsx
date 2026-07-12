@@ -38,6 +38,8 @@ export default async function CreatorPage({
     },
   });
   if (!creator) notFound();
+  // A suspended creator's page is gone for everyone but themselves.
+  if (creator.suspended && viewer?.id !== creator.id) notFound();
 
   // Public visitors see published videos only; the creator sees everything
   // (their studio handles drafts, but their page shouldn't hide them from

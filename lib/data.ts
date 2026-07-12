@@ -41,7 +41,13 @@ export interface FeedVideo {
 
 const feedInclude = {
   creator: {
-    select: { username: true, displayName: true, avatarEmoji: true, avatarColor: true },
+    select: {
+      username: true,
+      displayName: true,
+      avatarEmoji: true,
+      avatarColor: true,
+      suspended: true,
+    },
   },
   series: { select: { id: true, title: true } },
   comments: {
@@ -144,7 +150,9 @@ export async function getFeedVideos(
   return videoIds
     .map((id) => byId.get(id))
     .filter((v): v is FeedRow => Boolean(v))
-    .filter((v) => isPublicVideo(v) || v.creatorId === currentUserId)
+    // Suspended-creator videos vanish for everyone but that creator; this
+    // is the single defense covering every feed caller (?ch, series, recs).
+    .filter((v) => (!v.creator.suspended && isPublicVideo(v)) || v.creatorId === currentUserId)
     .filter((v) => !blockedIds.has(v.creatorId))
     .map((v) => ({
       id: v.id,
@@ -166,7 +174,12 @@ export async function getFeedVideos(
         { burnt: v.burntCount, popped: v.poppedCount, butter: v.butterCount },
         v.popcornScore
       ),
-      creator: v.creator,
+      creator: {
+        username: v.creator.username,
+        displayName: v.creator.displayName,
+        avatarEmoji: v.creator.avatarEmoji,
+        avatarColor: v.creator.avatarColor,
+      },
       series: v.series,
       episodeNumber: v.episodeNumber,
       nextEpisodeId: nextEpisodes.get(v.id) ?? null,
