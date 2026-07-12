@@ -70,6 +70,7 @@ async function main() {
     users[c.username] = await prisma.user.create({
       data: {
         username: c.username,
+        email: `${c.username}@reely.test`,
         displayName: c.displayName,
         avatarEmoji: c.avatarEmoji,
         avatarColor: c.avatarColor,
@@ -88,6 +89,7 @@ async function main() {
     users[v.username] = await prisma.user.create({
       data: {
         username: v.username,
+        email: `${v.username}@reely.test`,
         displayName: v.displayName,
         avatarEmoji: v.avatarEmoji,
         avatarColor: v.avatarColor,
@@ -102,6 +104,7 @@ async function main() {
   users["moderator"] = await prisma.user.create({
     data: {
       username: "moderator",
+      email: "moderator@reely.test",
       displayName: "Reely Moderation",
       avatarEmoji: "🛡️",
       avatarColor: "#8ECAE6",
@@ -114,6 +117,7 @@ async function main() {
   users["appreview"] = await prisma.user.create({
     data: {
       username: "appreview",
+      email: "appreview@reely.test",
       displayName: "App Review",
       avatarEmoji: "🙂",
       avatarColor: "#BDE0FE",

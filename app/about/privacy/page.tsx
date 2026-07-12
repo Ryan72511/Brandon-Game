@@ -22,6 +22,11 @@ export default function PrivacyPage() {
             (about, tools, process) if you fill it in.
           </li>
           <li>
+            Your email address — used only for your account and to help you get
+            back in if you forget your password. We never post it, show it to
+            other people, or sell or share it.
+          </li>
+          <li>
             Your password, stored only as a scrypt hash. We never see or
             store the password itself. Your recovery code is stored the same
             hashed way — used only to reset a forgotten password.
@@ -48,7 +53,7 @@ export default function PrivacyPage() {
 
         <h2 className="mt-6 mb-2 text-lg font-bold">What we don&apos;t collect</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>No email address — you sign up with just a username.</li>
+          <li>No phone number, no full name required, no home address.</li>
           <li>No advertising, and no ad profiles.</li>
           <li>No third-party analytics or tracking SDKs.</li>
           <li>No selling or sharing of your data with anyone.</li>

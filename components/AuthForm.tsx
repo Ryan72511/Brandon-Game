@@ -14,6 +14,7 @@ export default function AuthForm() {
   const currentYear = new Date().getFullYear();
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [birthYear, setBirthYear] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +42,7 @@ export default function AuthForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
         mode === "signup"
-          ? { username, displayName, password, avatarEmoji, birthYear: Number(birthYear) }
+          ? { username, email, displayName, password, avatarEmoji, birthYear: Number(birthYear) }
           : { username, password }
       ),
     });
@@ -110,6 +111,23 @@ export default function AuthForm() {
         </label>
         {mode === "signup" && (
           <>
+            <label className="flex flex-col gap-1 font-semibold">
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="like you@email.com"
+                autoComplete="email"
+                inputMode="email"
+                maxLength={120}
+                required
+                className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+              />
+              <span className="font-normal text-[13px] text-ink-soft">
+                For your account and password help. We never post it or share it.
+              </span>
+            </label>
             <label className="flex flex-col gap-1 font-semibold">
               Your name <span className="font-normal text-ink-soft">(what people see)</span>
               <input

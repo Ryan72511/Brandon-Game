@@ -5,6 +5,7 @@ import { jsonError, cleanString, rateLimitByIp } from "@/lib/api";
 import { AVATAR_COLORS, AVATAR_EMOJI } from "@/lib/constants";
 import { generateRecoveryCode, hashRecoveryCode } from "@/lib/recovery";
 import { MIN_SIGNUP_AGE, ageFromBirthYear, validBirthYear } from "@/lib/age";
+import { normalizeEmail } from "@/lib/email";
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
@@ -13,6 +14,7 @@ export async function POST(req: Request) {
   if (limited) return limited;
   const body = await req.json().catch(() => ({}));
   const username = cleanString(body.username, 20).toLowerCase();
+  const email = normalizeEmail(body.email);
   const displayName = cleanString(body.displayName, 40) || username;
   const password = typeof body.password === "string" ? body.password : "";
   const avatarEmoji = cleanString(body.avatarEmoji, 8) || AVATAR_EMOJI[0];
@@ -20,6 +22,9 @@ export async function POST(req: Request) {
 
   if (!USERNAME_RE.test(username)) {
     return jsonError("Username must be 3-20 characters: letters, numbers, underscores.", 400);
+  }
+  if (!email) {
+    return jsonError("Please enter a valid email address.", 400);
   }
   if (password.length < 6) {
     return jsonError("Password must be at least 6 characters.", 400);
@@ -35,8 +40,16 @@ export async function POST(req: Request) {
     );
   }
 
-  const existing = await prisma.user.findUnique({ where: { username } });
-  if (existing) return jsonError("That username is taken. Try another.", 409);
+  const existing = await prisma.user.findFirst({
+    where: { OR: [{ username }, { email }] },
+    select: { username: true, email: true },
+  });
+  if (existing?.username === username) {
+    return jsonError("That username is taken. Try another.", 409);
+  }
+  if (existing?.email === email) {
+    return jsonError("That email is already in use. Try signing in instead.", 409);
+  }
 
   const recoveryCode = generateRecoveryCode();
   const avatarColor = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
@@ -48,6 +61,7 @@ export async function POST(req: Request) {
     user = await prisma.user.create({
       data: {
         username,
+        email,
         displayName,
         passwordHash: hashPassword(password),
         avatarEmoji,
@@ -57,7 +71,13 @@ export async function POST(req: Request) {
       },
     });
   } catch (err) {
+    // Unique-constraint race under concurrency: map back to a friendly message
+    // for whichever field collided (P2002 meta.target names the field(s)).
     if ((err as { code?: string }).code === "P2002") {
+      const target = String((err as { meta?: { target?: unknown } }).meta?.target ?? "");
+      if (target.includes("email")) {
+        return jsonError("That email is already in use. Try signing in instead.", 409);
+      }
       return jsonError("That username is taken. Try another.", 409);
     }
     throw err;

@@ -58,6 +58,7 @@ let recoveryCode = "";
 await step("sign up: age gate + recovery code, then starter channel", async () => {
   await page.goto(BASE + "/login");
   await page.fill('input[placeholder="like sunny_dan"]', username);
+  await page.fill('input[type="email"]', `${username}@example.com`);
   await page.fill('input[placeholder="like Sunny Dan"]', "E2E Tester");
   await page.fill('input[placeholder="e.g. 1998"]', "1998");
   await page.fill('input[type="password"]', "test1234");
@@ -76,6 +77,7 @@ await step("under-13 signup is refused", async () => {
   const p = await ctx.newPage();
   await p.goto(BASE + "/login");
   await p.fill('input[placeholder="like sunny_dan"]', `kid_${stamp}`);
+  await p.fill('input[type="email"]', `kid_${stamp}@example.com`);
   await p.fill('input[placeholder="like Sunny Dan"]', "Too Young");
   await p.fill('input[placeholder="e.g. 1998"]', String(new Date().getFullYear() - 8));
   await p.fill('input[type="password"]', "test1234");
@@ -445,6 +447,7 @@ await step("forgot password: reset with the recovery code", async () => {
   const ru = `reset_${stamp}`;
   await p.goto(BASE + "/login");
   await p.fill('input[placeholder="like sunny_dan"]', ru);
+  await p.fill('input[type="email"]', `${ru}@example.com`);
   await p.fill('input[placeholder="like Sunny Dan"]', "Reset Tester");
   await p.fill('input[placeholder="e.g. 1998"]', "1990");
   await p.fill('input[type="password"]', "orig1234");
@@ -477,6 +480,40 @@ await step("forgot password: reset with the recovery code", async () => {
   await ctx.close();
 });
 
+await step("signup requires a valid, unique email", async () => {
+  const ctx = await browser.newContext();
+  const req = ctx.request;
+  const ip = "203.0.113.9";
+  const hx = { "x-forwarded-for": ip };
+  const base = { displayName: "Email Tester", birthYear: 1990, password: "pass1234" };
+  // Missing email is rejected.
+  const noEmail = await req.post(BASE + "/api/auth/signup", {
+    headers: hx,
+    data: { ...base, username: `em1_${stamp}` },
+  });
+  assert.equal(noEmail.status(), 400, "missing email should be rejected");
+  // Malformed email is rejected.
+  const badEmail = await req.post(BASE + "/api/auth/signup", {
+    headers: hx,
+    data: { ...base, username: `em2_${stamp}`, email: "not-an-email" },
+  });
+  assert.equal(badEmail.status(), 400, "malformed email should be rejected");
+  // A good, unique email works.
+  const shared = `dup_${stamp}@example.com`;
+  const ok = await req.post(BASE + "/api/auth/signup", {
+    headers: hx,
+    data: { ...base, username: `em3_${stamp}`, email: shared },
+  });
+  assert.equal(ok.status(), 200, "valid unique email should succeed");
+  // The same email can't be reused, even in a different case.
+  const dup = await req.post(BASE + "/api/auth/signup", {
+    headers: hx,
+    data: { ...base, username: `em4_${stamp}`, email: shared.toUpperCase() },
+  });
+  assert.equal(dup.status(), 409, "duplicate email should be rejected");
+  await ctx.close();
+});
+
 await step("brute-force wrong guesses can't lock the real owner out", async () => {
   // A unique X-Forwarded-For gives this test its own per-IP bucket, so the
   // shared suite traffic on "local" doesn't interfere with the assertion.
@@ -487,7 +524,7 @@ await step("brute-force wrong guesses can't lock the real owner out", async () =
   const hx = { "x-forwarded-for": ip };
   const su = await req.post(BASE + "/api/auth/signup", {
     headers: hx,
-    data: { username: u, displayName: "DoS Target", birthYear: 1990, password: "right1234" },
+    data: { username: u, email: `${u}@example.com`, displayName: "DoS Target", birthYear: 1990, password: "right1234" },
   });
   assert.equal(su.ok(), true, "signup should succeed");
   // Attacker floods the victim's public username with wrong passwords, past
@@ -518,7 +555,7 @@ await step("changing password logs out other sessions", async () => {
   const rA = ctxA.request;
   const su = await rA.post(BASE + "/api/auth/signup", {
     headers: hx,
-    data: { username: u, displayName: "PW User", birthYear: 1990, password: "orig1234" },
+    data: { username: u, email: `${u}@example.com`, displayName: "PW User", birthYear: 1990, password: "orig1234" },
   });
   assert.equal(su.ok(), true, "signup should succeed");
   assert.equal((await authed(rA)).status(), 200, "session A starts valid");
