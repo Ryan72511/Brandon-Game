@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Reely — App Privacy Manifest (PrivacyInfo.xcprivacy)
+  ==========================================================================
+  Drag this file into the Xcode project (into the app target, "Copy items if
+  needed" checked so it is added to "Copy Bundle Resources"). Apple reads it at
+  upload time and cross-checks it against your App Store Connect privacy
+  answers, so keep the two in sync (see docs/APP_STORE.md).
+
+  WHAT THIS DECLARES (true for Reely today):
+    - NSPrivacyTracking = false. Reely does NOT track (no ATT prompt, no ad
+      SDKs, no cross-app/third-party linking). NSPrivacyTrackingDomains empty.
+    - Collected data:
+        * User content (videos, comments) — LINKED to the account, NOT used for
+          tracking, purpose: App Functionality.
+        * Product interaction (watch history / usage) — LINKED, NOT tracking,
+          purpose: App Functionality. (Reely has no third-party analytics.)
+    - Required-reason APIs:
+        * UserDefaults (CA92.1) — used by Capacitor's WKWebView container.
+
+  ADJUST THESE IF THINGS CHANGE:
+    - If you add crash/analytics tooling (e.g. Sentry), ADD a
+      "NSPrivacyCollectedDataTypeCrashData" entry and set its purpose, and
+      update docs/APP_STORE.md + the App Store privacy questionnaire.
+    - If you never persist file timestamps in native code you may DELETE the
+      File Timestamp (C617.1) block below. It is included because Capacitor /
+      its plugins can touch the filesystem; keep it only if Xcode's
+      "required reason API" audit flags file-timestamp usage.
+    - If you add any tracking or ad SDK, flip NSPrivacyTracking to true and
+      list the domains — do NOT ship this file unchanged in that case.
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array>
+        <!-- User-generated content: uploaded videos and comments. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- Product interaction: watch history / in-app usage. First-party
+             only — powers recommendations and "continue watching". -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeProductInteraction</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+    </array>
+
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <!-- UserDefaults — used by the Capacitor WKWebView container. -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>CA92.1</string>
+            </array>
+        </dict>
+
+        <!-- File timestamp — keep only if Xcode's audit flags it (see header). -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>C617.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

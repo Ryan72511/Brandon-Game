@@ -4,19 +4,32 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AVATAR_EMOJI } from "@/lib/constants";
+import RecoveryCodeCard from "@/components/RecoveryCodeCard";
 
 // One form, two moods: "I'm new here" and "Welcome back". Plain words,
 // three fields max.
 export default function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentYear = new Date().getFullYear();
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [birthYear, setBirthYear] = useState("");
   const [password, setPassword] = useState("");
   const [avatarEmoji, setAvatarEmoji] = useState(AVATAR_EMOJI[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Set once signup succeeds — we show the recovery code before moving on.
+  const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+
+  function goNext() {
+    const next = searchParams.get("next") ?? "/";
+    // Same-site paths only: one leading slash, then not "/" or "\" —
+    // "//evil.com" is protocol-relative and browsers fold "/\" into it.
+    router.push(/^\/($|[^/\\])/.test(next) ? next : "/");
+    router.refresh();
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,21 +41,33 @@ export default function AuthForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
         mode === "signup"
-          ? { username, displayName, password, avatarEmoji }
+          ? { username, displayName, password, avatarEmoji, birthYear: Number(birthYear) }
           : { username, password }
       ),
     });
+    const data = await res.json().catch(() => ({}));
     setBusy(false);
     if (res.ok) {
-      const next = searchParams.get("next") ?? "/";
-      // Same-site paths only: one leading slash, then not "/" or "\" —
-      // "//evil.com" is protocol-relative and browsers fold "/\" into it.
-      router.push(/^\/($|[^/\\])/.test(next) ? next : "/");
-      router.refresh();
+      if (mode === "signup" && data.recoveryCode) {
+        // Don't route yet — the recovery-code screen owns the next step.
+        setRecoveryCode(data.recoveryCode);
+        return;
+      }
+      goNext();
     } else {
-      const data = await res.json().catch(() => ({}));
       setError(data.error ?? "That didn't work. Try again.");
     }
+  }
+
+  if (recoveryCode) {
+    return (
+      <RecoveryCodeCard
+        code={recoveryCode}
+        heading="Save your recovery code"
+        actionLabel="I saved it — let’s go"
+        onDone={goNext}
+      />
+    );
   }
 
   return (
@@ -95,6 +120,23 @@ export default function AuthForm() {
                 className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
               />
             </label>
+            <label className="flex flex-col gap-1 font-semibold">
+              Year you were born
+              <input
+                type="number"
+                inputMode="numeric"
+                value={birthYear}
+                onChange={(e) => setBirthYear(e.target.value)}
+                placeholder="e.g. 1998"
+                min={1900}
+                max={currentYear}
+                required
+                className="min-h-14 rounded-xl border-2 border-line bg-surface px-4 text-lg font-normal outline-none focus:border-accent"
+              />
+              <span className="font-normal text-[13px] text-ink-soft">
+                We only use this to keep Reely age-appropriate.
+              </span>
+            </label>
             <fieldset>
               <legend className="mb-1 font-semibold">Pick your face</legend>
               <div className="flex flex-wrap gap-2">
@@ -135,6 +177,13 @@ export default function AuthForm() {
         >
           {busy ? "One moment…" : mode === "signup" ? "Start watching" : "Sign in"}
         </button>
+        {mode === "login" && (
+          <p className="text-center text-[14px]">
+            <Link href="/reset" className="font-semibold text-accent underline">
+              Forgot your password?
+            </Link>
+          </p>
+        )}
       </form>
       <p className="mt-3 text-center text-[13px] text-ink-soft">
         By continuing you agree to our{" "}

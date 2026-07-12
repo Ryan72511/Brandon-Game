@@ -79,6 +79,7 @@ async function main() {
         creatorTools: JSON.stringify(c.creatorTools),
         creatorProcess: c.creatorProcess,
         passwordHash: hashPassword(DEMO_PASSWORD),
+        birthYear: 1990,
         createdAt: daysAgo(90),
       },
     });
@@ -91,6 +92,7 @@ async function main() {
         avatarEmoji: v.avatarEmoji,
         avatarColor: v.avatarColor,
         passwordHash: hashPassword(DEMO_PASSWORD),
+        birthYear: 1992,
         createdAt: daysAgo(60),
       },
     });
@@ -105,6 +107,7 @@ async function main() {
       avatarColor: "#8ECAE6",
       role: "admin",
       passwordHash: hashPassword(DEMO_PASSWORD),
+      birthYear: 1985,
       createdAt: daysAgo(90),
     },
   });
@@ -115,6 +118,7 @@ async function main() {
       avatarEmoji: "🙂",
       avatarColor: "#BDE0FE",
       passwordHash: hashPassword(DEMO_PASSWORD),
+      birthYear: 1995,
       createdAt: daysAgo(1),
     },
   });

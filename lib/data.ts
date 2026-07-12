@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { scoreDisplay, type ScoreDisplay } from "@/lib/score";
 import { parseTags } from "@/lib/format";
 import { isPublicVideo } from "@/lib/visibility";
+import { isAdult } from "@/lib/age";
 
 export interface FeedVideo {
   id: string;
@@ -68,6 +69,14 @@ export async function getFeedVideos(
   opts: { reasons?: Map<string, string> } = {}
 ): Promise<FeedVideo[]> {
   if (videoIds.length === 0) return [];
+  // Only confirmed adults see mature content (signed-out = not adult).
+  const viewer = currentUserId
+    ? await prisma.user.findUnique({
+        where: { id: currentUserId },
+        select: { birthYear: true },
+      })
+    : null;
+  const canSeeMature = isAdult(viewer?.birthYear);
   const [videos, myRatings, mySaves, nextEpisodes, progress, myBlocks] = await Promise.all([
     prisma.video.findMany({ where: { id: { in: videoIds } }, include: feedInclude }),
     currentUserId
@@ -154,6 +163,9 @@ export async function getFeedVideos(
     // is the single defense covering every feed caller (?ch, series, recs).
     .filter((v) => (!v.creator.suspended && isPublicVideo(v)) || v.creatorId === currentUserId)
     .filter((v) => !blockedIds.has(v.creatorId))
+    // Mature videos only reach confirmed adults (the creator always sees
+    // their own). Kids and signed-out viewers never do.
+    .filter((v) => !v.mature || canSeeMature || v.creatorId === currentUserId)
     .map((v) => ({
       id: v.id,
       title: v.title,

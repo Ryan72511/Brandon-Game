@@ -23,7 +23,12 @@ export default function PrivacyPage() {
           </li>
           <li>
             Your password, stored only as a scrypt hash. We never see or
-            store the password itself.
+            store the password itself. Your recovery code is stored the same
+            hashed way — used only to reset a forgotten password.
+          </li>
+          <li>
+            The year you were born — used only to keep {APP_NAME}
+            age-appropriate (we don&apos;t store your full birth date).
           </li>
           <li>
             What you make: uploaded videos with their captions and poster

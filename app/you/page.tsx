@@ -140,6 +140,16 @@ export default async function YouPage() {
         )}
       </nav>
 
+      <Link
+        href="/settings"
+        className="flex min-h-12 items-center rounded-xl border border-line bg-surface px-4 text-[15px]"
+      >
+        <span className="flex-1">Settings</span>
+        <span className="text-ink-soft" aria-hidden>
+          ›
+        </span>
+      </Link>
+
       <section className="flex flex-col gap-2">
         <h2 className="px-1 text-[14px] font-bold uppercase tracking-wide text-ink-soft">
           About &amp; legal

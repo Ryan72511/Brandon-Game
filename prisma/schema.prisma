@@ -32,6 +32,12 @@ model User {
   creatorProcess String @default("")
 
   passwordHash String
+  // Scrypt hash of a one-time recovery code shown at signup — the only way
+  // to reset a password without email. Rotated on each use.
+  recoveryCodeHash String @default("")
+  // Declared age (birth year). Under 13 is blocked at signup; under 18 never
+  // sees mature content. Null = legacy account (treated as under-18-safe).
+  birthYear    Int?
 
   videos        Video[]
   series        Series[]

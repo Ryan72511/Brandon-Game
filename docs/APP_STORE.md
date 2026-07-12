@@ -88,18 +88,26 @@ with **Capacitor** (WKWebView). Wrapper-level work:
 - Crash/uptime monitoring (e.g. Sentry — then update the privacy manifest
   and policy accordingly).
 
-## Known gaps to close before real users ⚠️
+## Resolved since first draft ✅
 
-1. **Password reset**: accounts are username-only (kid/grandparent-simple,
-   no email collected — a privacy plus). But there is no self-serve reset;
-   today it's support-assisted. Options: add optional recovery email, or
-   Sign in with Apple as primary. Decide before scale.
-2. **Age assurance**: 13+ is declared in Terms; there is no birthdate
-   gate. If the App Store age rating lands at 12+, add a declared-age step
-   at signup and hide mature-flagged content from under-17 accounts.
-3. **Content scanning**: moderation is human (reports + review queue).
-   At scale add automated CSAM/NSFW scanning at upload (e.g. hive.ai,
-   AWS Rekognition) — non-negotiable before open registration.
+1. **Password reset** — done, no email needed: every account gets a
+   one-time **recovery code** at signup (shown once, stored hashed). The
+   `/reset` page takes username + code + new password, rotates a fresh code,
+   and signs the user in. Signed-in users can also change their password in
+   `/settings`. (Optional recovery email remains a future nicety, not a
+   blocker.)
+2. **Age assurance** — done: signup requires a **birth year**; under-13 is
+   refused (COPPA), and **mature-flagged content is hidden from anyone under
+   18** and from signed-out visitors, enforced in `lib/data.ts`,
+   `lib/age.ts`, the direct watch route, Surprise Me, and recommendations.
+
+## Remaining gap to close before OPEN registration ⚠️
+
+- **Automated content scanning**: moderation is human today (reports +
+  review queue + pre-publication review mode). Before you allow
+  unrestricted public uploads, add automated CSAM/NSFW scanning at upload
+  (e.g. hive.ai, AWS Rekognition, PhotoDNA). The curated/invite launch
+  approach in this doc does not require it; open registration does.
 
 ## App Store Connect package 📝
 
@@ -128,8 +136,12 @@ with **Capacitor** (WKWebView). Wrapper-level work:
 > 4. Mature-flagged content is labeled and kept out of kid-facing surfaces.
 > 5. Account deletion: You tab → Delete account (typed confirmation;
 >    removes the account, personal data, and uploaded videos).
-> 6. Browsing and watching work without an account.
-> 7. No purchases, subscriptions, ads, or tracking in this version.
+> 6. Browsing and watching work without an account. Sign-up asks a birth
+>    year (13+ required); mature-flagged content is hidden from under-18s.
+> 7. Forgotten passwords reset via a recovery code shown at sign-up (no
+>    email is collected). Reviewer accounts use the fixed passwords below,
+>    so no reset is needed to sign in.
+> 8. No purchases, subscriptions, ads, or tracking in this version.
 >
 > Reviewer accounts (non-expiring, no codes required):
 > - Viewer/creator: `appreview` / `reely123` — full watch + create experience.

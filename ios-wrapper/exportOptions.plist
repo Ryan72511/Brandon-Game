@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Reely — App Store export options template (exportOptions.plist)
+  ==========================================================================
+  Used for command-line archiving/exporting instead of the Xcode "Distribute
+  App" wizard. Most developers can just use the Xcode Organizer UI (see
+  ios-wrapper/README.md, "Build & submit"); this file is here for CI or
+  scripted uploads:
+
+      xcodebuild -workspace ios/App/App.xcworkspace \
+        -scheme App -configuration Release \
+        -archivePath build/Reely.xcarchive archive
+
+      xcodebuild -exportArchive \
+        -archivePath build/Reely.xcarchive \
+        -exportOptionsPlist ios-wrapper/exportOptions.plist \
+        -exportPath build/export
+
+  BEFORE USING: replace TEAMID_HERE below with your 10-character Apple
+  Developer Team ID (Apple Developer portal → Membership, or Xcode → Signing &
+  Capabilities → Team). Everything else is a sensible App Store default.
+-->
+<plist version="1.0">
+<dict>
+    <!-- App Store Connect distribution. -->
+    <key>method</key>
+    <string>app-store-connect</string>
+
+    <!-- Your 10-character Apple Developer Team ID. REQUIRED — change this. -->
+    <key>teamID</key>
+    <string>TEAMID_HERE</string>
+
+    <!-- Upload the dSYM/symbols so App Store Connect can symbolicate crashes. -->
+    <key>uploadSymbols</key>
+    <true/>
+
+    <!-- Let Xcode manage signing certs/profiles automatically. Switch to
+         "manual" and add a provisioningProfiles dict if you sign manually. -->
+    <key>signingStyle</key>
+    <string>automatic</string>
+
+    <!-- Keep the app thinned per-device via the App Store. -->
+    <key>thinning</key>
+    <string>&lt;none&gt;</string>
+
+    <!-- Use the latest Swift/runtime symbols from the App Store, not bundled. -->
+    <key>stripSwiftSymbols</key>
+    <true/>
+
+    <!-- Set to false only if you deliberately want to export the archive
+         without kicking off a TestFlight/App Store upload from CI. -->
+    <key>manageAppVersionAndBuildNumber</key>
+    <true/>
+</dict>
+</plist>

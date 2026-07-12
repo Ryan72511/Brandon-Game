@@ -14,7 +14,12 @@ export interface RateLimit {
 }
 
 export const LIMITS = {
-  auth: { perMinute: 5, burst: 5 }, // login/signup attempts
+  // Per-account brute-force limit (login/reset): 10 tries/min against a
+  // single username, regardless of source IP.
+  auth: { perMinute: 10, burst: 8 },
+  // Per-IP flood ceiling for auth endpoints — generous so shared NAT IPs
+  // (homes, schools) aren't locked out.
+  authIp: { perMinute: 40, burst: 30 },
   write: { perMinute: 60, burst: 30 }, // comments, ratings, saves, follows
   upload: { perMinute: 2, burst: 3 }, // video/cover uploads
   create: { perMinute: 6, burst: 6 }, // channels, friend requests

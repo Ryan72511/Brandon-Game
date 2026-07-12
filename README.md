@@ -71,3 +71,13 @@ The App Store build wraps this same app with Capacitor (WKWebView); the scale-up
 (Postgres, object storage + CDN, HLS transcoding via Mux, Redis, real recsys) is in
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Creator monetization is deliberately
 out of scope until the audience exists.
+
+## iPhone app
+
+Reely ships as a responsive web app wrapped with **Capacitor** (a native
+WKWebView container) that loads the **live hosted site** over HTTPS — a real
+native app on your production API, not a static bundle. The Capacitor config
+lives in [`capacitor.config.ts`](capacitor.config.ts); the definitive build-and-
+submit guide (install, `REELY_APP_URL`, signing, privacy manifest, Archive →
+App Store Connect) is in [`ios-wrapper/README.md`](ios-wrapper/README.md), and
+the product/policy submission playbook is in [`docs/APP_STORE.md`](docs/APP_STORE.md).

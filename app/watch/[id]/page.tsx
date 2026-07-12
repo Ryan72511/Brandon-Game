@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/session";
 import { recommendForUser } from "@/lib/recs";
 import { getChart } from "@/lib/charts";
 import { isPublicVideo, publicVideoWhere } from "@/lib/visibility";
+import { isAdult } from "@/lib/age";
 import { getFeedVideos, getMyChannels } from "@/lib/data";
 import WatchFeed from "@/components/watch/WatchFeed";
 
@@ -34,13 +35,21 @@ export default async function WatchPage({
       status: true,
       publishAt: true,
       creatorId: true,
+      mature: true,
       creator: { select: { suspended: true } },
     },
   });
   if (!video) notFound();
-  const visible =
-    (isPublicVideo(video) && !video.creator.suspended) || video.creatorId === user?.id;
+  const isOwnVideo = video.creatorId === user?.id;
+  const visible = (isPublicVideo(video) && !video.creator.suspended) || isOwnVideo;
   if (!visible) notFound();
+  // Mature video, non-adult viewer: 404 rather than reveal it exists.
+  if (video.mature && !isOwnVideo) {
+    const viewer = user
+      ? await prisma.user.findUnique({ where: { id: user.id }, select: { birthYear: true } })
+      : null;
+    if (!isAdult(viewer?.birthYear)) notFound();
+  }
   // A blocked creator's video 404s for the blocker too — otherwise the feed
   // filter would strip it and silently show a different video.
   if (user && video.creatorId !== user.id) {

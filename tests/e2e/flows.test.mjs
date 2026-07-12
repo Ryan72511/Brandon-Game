@@ -54,14 +54,34 @@ await step("rating while signed out redirects to sign-in", async () => {
   await page.waitForURL(/\/login/);
 });
 
-await step("sign up creates an account and starter channel", async () => {
+let recoveryCode = "";
+await step("sign up: age gate + recovery code, then starter channel", async () => {
   await page.goto(BASE + "/login");
   await page.fill('input[placeholder="like sunny_dan"]', username);
   await page.fill('input[placeholder="like Sunny Dan"]', "E2E Tester");
+  await page.fill('input[placeholder="e.g. 1998"]', "1998");
   await page.fill('input[type="password"]', "test1234");
   await page.click('button[type="submit"]');
+  // The recovery-code screen shows before we continue.
+  await page.waitForSelector("text=Save your recovery code");
+  recoveryCode = (await page.locator("p.font-mono").first().innerText()).trim();
+  assert.ok(recoveryCode.length > 0, "recovery code not shown");
+  await page.click('button:has-text("I saved it")');
   await page.waitForURL(BASE + "/");
   await page.waitForSelector("video");
+});
+
+await step("under-13 signup is refused", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 420, height: 880 } });
+  const p = await ctx.newPage();
+  await p.goto(BASE + "/login");
+  await p.fill('input[placeholder="like sunny_dan"]', `kid_${stamp}`);
+  await p.fill('input[placeholder="like Sunny Dan"]', "Too Young");
+  await p.fill('input[placeholder="e.g. 1998"]', String(new Date().getFullYear() - 8));
+  await p.fill('input[type="password"]', "test1234");
+  await p.click('button[type="submit"]');
+  await p.waitForSelector("text=/at least 13/");
+  await ctx.close();
 });
 
 await step("rate a video (Extra Butter)", async () => {
@@ -415,6 +435,45 @@ await step("creator cannot republish a moderator-removed video", async () => {
     return res.status;
   }, videoId);
   assert.equal(status, 403, `expected 403 republishing removed video, got ${status}`);
+  await ctx.close();
+});
+
+await step("forgot password: reset with the recovery code", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 420, height: 880 } });
+  const p = await ctx.newPage();
+  // Fresh throwaway account so we don't disturb the main test account.
+  const ru = `reset_${stamp}`;
+  await p.goto(BASE + "/login");
+  await p.fill('input[placeholder="like sunny_dan"]', ru);
+  await p.fill('input[placeholder="like Sunny Dan"]', "Reset Tester");
+  await p.fill('input[placeholder="e.g. 1998"]', "1990");
+  await p.fill('input[type="password"]', "orig1234");
+  await p.click('button[type="submit"]');
+  await p.waitForSelector("text=Save your recovery code");
+  const code = (await p.locator("p.font-mono").first().innerText()).trim();
+  await p.click('button:has-text("I saved it")');
+  await p.waitForURL(BASE + "/");
+  // Sign out, then reset the password with the code.
+  await p.goto(BASE + "/you");
+  await p.click("text=Sign out");
+  await p.goto(BASE + "/reset");
+  await p.fill('input[placeholder="like sunny_dan"]', ru);
+  await p.locator("input").nth(1).fill(code);
+  await p.locator('input[type="password"]').fill("newpass99");
+  await p.click('button[type="submit"]');
+  await p.waitForSelector("text=Save your new recovery code");
+  // Click through the card like a real user (this also lands us signed in).
+  await p.click('button:has-text("I saved it")');
+  await p.waitForURL(BASE + "/");
+  // The new password now works.
+  await p.goto(BASE + "/you");
+  await p.click("text=Sign out");
+  await p.goto(BASE + "/login");
+  await p.click("text=Welcome back");
+  await p.fill('input[placeholder="like sunny_dan"]', ru);
+  await p.fill('input[type="password"]', "newpass99");
+  await p.click('button:has-text("Sign in")');
+  await p.waitForURL(BASE + "/");
   await ctx.close();
 });
 

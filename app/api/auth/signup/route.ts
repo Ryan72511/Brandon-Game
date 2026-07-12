@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { createSession, hashPassword } from "@/lib/session";
 import { jsonError, cleanString, rateLimitByIp } from "@/lib/api";
 import { AVATAR_COLORS, AVATAR_EMOJI } from "@/lib/constants";
+import { generateRecoveryCode, hashRecoveryCode } from "@/lib/recovery";
+import { MIN_SIGNUP_AGE, ageFromBirthYear, validBirthYear } from "@/lib/age";
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
@@ -14,6 +16,7 @@ export async function POST(req: Request) {
   const displayName = cleanString(body.displayName, 40) || username;
   const password = typeof body.password === "string" ? body.password : "";
   const avatarEmoji = cleanString(body.avatarEmoji, 8) || AVATAR_EMOJI[0];
+  const birthYear = typeof body.birthYear === "number" ? body.birthYear : Number(body.birthYear);
 
   if (!USERNAME_RE.test(username)) {
     return jsonError("Username must be 3-20 characters: letters, numbers, underscores.", 400);
@@ -21,10 +24,21 @@ export async function POST(req: Request) {
   if (password.length < 6) {
     return jsonError("Password must be at least 6 characters.", 400);
   }
+  // Declared-age gate (Apple / COPPA).
+  if (!validBirthYear(birthYear)) {
+    return jsonError("Please tell us the year you were born.", 400);
+  }
+  if (ageFromBirthYear(birthYear) < MIN_SIGNUP_AGE) {
+    return jsonError(
+      `You need to be at least ${MIN_SIGNUP_AGE} to join Reely. Thanks for stopping by!`,
+      403
+    );
+  }
 
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing) return jsonError("That username is taken. Try another.", 409);
 
+  const recoveryCode = generateRecoveryCode();
   const avatarColor = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
   // Everyone starts with one channel so "Save" always has a target. The
   // starter slug gets a random suffix on collision; the username unique
@@ -38,6 +52,8 @@ export async function POST(req: Request) {
         passwordHash: hashPassword(password),
         avatarEmoji,
         avatarColor,
+        birthYear,
+        recoveryCodeHash: hashRecoveryCode(recoveryCode),
       },
     });
   } catch (err) {
@@ -68,5 +84,7 @@ export async function POST(req: Request) {
     });
   }
   await createSession(user.id);
-  return NextResponse.json({ ok: true, username: user.username });
+  // The recovery code is returned exactly once, right after signup, so the
+  // client can show it. We never store or send it again.
+  return NextResponse.json({ ok: true, username: user.username, recoveryCode });
 }

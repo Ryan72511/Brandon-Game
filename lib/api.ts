@@ -31,10 +31,24 @@ export function withUser<Args extends unknown[]>(
   };
 }
 
-// IP-keyed limiter for unauthenticated routes (login/signup).
-export function rateLimitByIp(req: Request, tier: RateLimit = LIMITS.auth): Response | null {
+// IP-keyed limiter for unauthenticated routes — a generous flood ceiling
+// (a whole household/school shares one NAT IP, so this must not lock out
+// legit users; targeted brute-force is stopped per-account below).
+export function rateLimitByIp(req: Request, tier: RateLimit = LIMITS.authIp): Response | null {
   if (!allowRequest(`ip:${clientIp(req)}:${tier.perMinute}`, tier)) {
     return jsonError("Too many attempts — wait a minute and try again.", 429);
+  }
+  return null;
+}
+
+// Per-account limiter for login/reset — the real brute-force surface. Keyed
+// by the username being attacked, so guessing one account's password can't
+// be sped up by switching IPs, and one account's attempts don't affect
+// anyone else on the same network.
+export function rateLimitByAccount(username: string, tier: RateLimit = LIMITS.auth): Response | null {
+  const key = username.trim().toLowerCase() || "unknown";
+  if (!allowRequest(`acct:${key}:${tier.perMinute}`, tier)) {
+    return jsonError("Too many tries for this account — wait a minute.", 429);
   }
   return null;
 }
