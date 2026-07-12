@@ -20,6 +20,10 @@ model User {
   bio         String   @default("")
   // "watching" | "creating" — which mode the user last toggled to
   mode        String   @default("watching")
+  // "user" | "admin" — admins get the moderation dashboard.
+  role        String   @default("user")
+  // Suspended accounts can't sign in; their content is hidden everywhere.
+  suspended   Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   // Creator-profile fields (filled in when they switch to creating)
@@ -40,6 +44,9 @@ model User {
   gotFriend     Friendship[] @relation("addressee")
   sessions      Session[]
   notifications Notification[]
+  reportsFiled   Report[] @relation("reportsFiled")
+  blocksMade     Block[]  @relation("blocksMade")
+  blocksReceived Block[]  @relation("blocksReceived")
 }
 
 model Session {
@@ -80,10 +87,16 @@ model Video {
   durationSec Int
   category    String // one of lib/constants CATEGORIES
   tags        String   @default("") // JSON array of strings
-  // "draft" videos are visible only to their creator; "published" +
-  // publishAt<=now (or null) is public. Scheduled publishing = future date.
+  // "draft" (creator-only) | "pending" (awaiting moderation when review
+  // mode is on) | "published" (public once publishAt<=now or null) |
+  // "removed" (taken down by moderators — creator sees why in their studio).
   status      String    @default("published")
   publishAt   DateTime?
+  // Creator flagged mature themes; moderators can correct it. Mature
+  // content is kept out of kid surfaces and labeled on the player.
+  mature      Boolean   @default(false)
+  // When the creator confirmed they own/control the rights at upload.
+  rightsConfirmedAt DateTime?
   // WebVTT captions (empty = none). Served to the player as a Blob track.
   captionsVtt String   @default("")
   createdAt   DateTime @default(now())
@@ -205,6 +218,45 @@ model Follow {
 
   @@id([userId, channelId])
   @@index([channelId])
+}
+
+// A report against a video, a creator, or a comment. The admin dashboard
+// works these; every decision is recorded on the row.
+model Report {
+  id         String  @id @default(cuid())
+  reporterId String
+  reporter   User    @relation("reportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  // "video" | "creator" | "comment"
+  targetType String
+  videoId    String?
+  creatorId  String? // the reported user's id (creator or commenter)
+  commentId  String?
+  // "not_for_kids" | "harmful" | "hateful" | "copyright" | "spam" | "other"
+  reason     String
+  detail     String   @default("")
+  // "open" | "resolved"
+  status     String   @default("open")
+  // What the moderator did: "dismissed" | "video_removed" | "creator_suspended" | "comment_removed" | note text
+  resolution String   @default("")
+  createdAt  DateTime @default(now())
+  resolvedAt DateTime?
+
+  @@index([status, createdAt])
+  @@index([videoId])
+  @@index([creatorId])
+}
+
+// Viewer-level block: the blocked creator's videos and comments disappear
+// for the blocker everywhere in the app.
+model Block {
+  blockerId String
+  blocker   User     @relation("blocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("blocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
 }
 
 model WatchEvent {

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { recommendForUser } from "@/lib/recs";
 import { getChart } from "@/lib/charts";
+import { isPublicVideo } from "@/lib/visibility";
 import { getFeedVideos, getMyChannels } from "@/lib/data";
 import WatchFeed from "@/components/watch/WatchFeed";
 
@@ -24,8 +25,22 @@ export default async function WatchPage({
   const { ch, series } = await searchParams;
   const user = await getCurrentUser();
 
-  const video = await prisma.video.findUnique({ where: { id }, select: { id: true } });
+  // Direct links to drafts, pending, removed, or suspended-creator videos
+  // 404 for everyone but the creator — no metadata leaks via deep links.
+  const video = await prisma.video.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      status: true,
+      publishAt: true,
+      creatorId: true,
+      creator: { select: { suspended: true } },
+    },
+  });
   if (!video) notFound();
+  const visible =
+    (isPublicVideo(video) && !video.creator.suspended) || video.creatorId === user?.id;
+  if (!visible) notFound();
 
   let ids: string[] = [id];
   if (ch) {

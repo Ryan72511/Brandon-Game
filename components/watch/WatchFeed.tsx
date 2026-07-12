@@ -300,7 +300,7 @@ export default function WatchFeed({
         />
       )}
       {sheet?.kind === "detail" && sheetVideo && (
-        <DetailSheet video={sheetVideo} onClose={() => setSheet(null)} />
+        <DetailSheet video={sheetVideo} signedIn={signedIn} onClose={() => setSheet(null)} />
       )}
     </>
   );

@@ -227,13 +227,13 @@ export async function surpriseMe(userId: string | null, limit = 20): Promise<str
 
   const [quality, fresh] = await Promise.all([
     prisma.video.findMany({
-      where: { ...publicVideoWhere(), popcornScore: { gte: 55 } },
+      where: { ...publicVideoWhere(), popcornScore: { gte: 55 }, mature: false },
       select: { id: true },
       orderBy: { popcornScore: "desc" },
       take: 200,
     }),
     prisma.video.findMany({
-      where: publicVideoWhere(),
+      where: { ...publicVideoWhere(), mature: false },
       select: { id: true },
       orderBy: { createdAt: "desc" },
       take: 50,

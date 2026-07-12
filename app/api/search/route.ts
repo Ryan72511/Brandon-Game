@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { EMPTY_RESULTS, normalizeQuery, searchAll } from "@/lib/search";
+import { getCurrentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,8 @@ export async function GET(req: Request) {
   const q = normalizeQuery(new URL(req.url).searchParams.get("q"));
   if (!q) return NextResponse.json(EMPTY_RESULTS);
   try {
-    return NextResponse.json(await searchAll(q));
+    const viewer = await getCurrentUser();
+    return NextResponse.json(await searchAll(q, viewer?.id));
   } catch (err) {
     console.error(err);
     return jsonError("Something went wrong. Please try again.", 500);

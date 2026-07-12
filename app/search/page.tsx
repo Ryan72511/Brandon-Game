@@ -5,6 +5,7 @@ import VideoCard from "@/components/VideoCard";
 import ChannelTile from "@/components/ChannelTile";
 import Avatar from "@/components/Avatar";
 import { EMPTY_RESULTS, normalizeQuery, searchAll } from "@/lib/search";
+import { getCurrentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,8 @@ export default async function SearchPage({
   const { q: rawParam } = await searchParams;
   const raw = (rawParam ?? "").trim();
   const q = normalizeQuery(raw);
-  const results = q ? await searchAll(q) : EMPTY_RESULTS;
+  const viewer = await getCurrentUser();
+  const results = q ? await searchAll(q, viewer?.id) : EMPTY_RESULTS;
   const hasResults =
     results.videos.length > 0 || results.creators.length > 0 || results.channels.length > 0;
 

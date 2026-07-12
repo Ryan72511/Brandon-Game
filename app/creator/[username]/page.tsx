@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/session";
 import { getFeedVideos } from "@/lib/data";
 import { parseTags } from "@/lib/format";
 import { publicVideoWhere } from "@/lib/visibility";
+import BlockButton from "@/components/BlockButton";
+import ReportControl from "@/components/ReportControl";
 import PageHeader from "@/components/PageHeader";
 import Avatar from "@/components/Avatar";
 import VideoCard from "@/components/VideoCard";
@@ -55,6 +57,13 @@ export default async function CreatorPage({
   );
   const tools = parseTags(creator.creatorTools);
   const isSelf = viewer?.id === creator.id;
+  const blocked = viewer
+    ? Boolean(
+        await prisma.block.findUnique({
+          where: { blockerId_blockedId: { blockerId: viewer.id, blockedId: creator.id } },
+        })
+      )
+    : false;
 
   return (
     <div className="flex flex-col gap-6 pb-6">
@@ -76,6 +85,21 @@ export default async function CreatorPage({
           >
             ✏️ Edit your creator page
           </Link>
+        )}
+        {!isSelf && (
+          <div className="flex flex-wrap items-center gap-2">
+            <BlockButton
+              username={creator.username}
+              blocked={blocked}
+              signedIn={Boolean(viewer)}
+            />
+            <ReportControl targetType="creator" targetId={creator.id} signedIn={Boolean(viewer)} />
+          </div>
+        )}
+        {blocked && (
+          <p className="rounded-xl bg-bg p-3 text-[15px] text-ink-soft">
+            You&apos;ve blocked this creator — their videos won&apos;t show up for you anywhere.
+          </p>
         )}
 
         {creator.creatorAbout && (

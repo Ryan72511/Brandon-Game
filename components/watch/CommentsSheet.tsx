@@ -5,6 +5,7 @@ import Sheet from "./Sheet";
 import Avatar from "@/components/Avatar";
 import { formatTimecode, timeAgo } from "@/lib/format";
 import type { CommentDto } from "./types";
+import ReportControl from "@/components/ReportControl";
 
 // Timecoded comments: each comment can pin to a moment; tapping the time
 // chip seeks the video. The creator of the video can pin one comment to the
@@ -206,14 +207,19 @@ export default function CommentsSheet({
                     )}
                     {c.text}
                   </p>
-                  {viewerIsCreator && (
-                    <button
-                      onClick={() => togglePin(c)}
-                      className="mt-1 text-[13px] font-bold text-accent"
-                    >
-                      {c.pinned ? "Unpin" : "Pin to top"}
-                    </button>
-                  )}
+                  <div className="mt-1 flex items-center gap-3">
+                    {viewerIsCreator && (
+                      <button
+                        onClick={() => togglePin(c)}
+                        className="text-[13px] font-bold text-accent"
+                      >
+                        {c.pinned ? "Unpin" : "Pin to top"}
+                      </button>
+                    )}
+                    {signedIn && (
+                      <ReportControl targetType="comment" targetId={c.id} signedIn compact />
+                    )}
+                  </div>
                 </div>
               </li>
             ))}

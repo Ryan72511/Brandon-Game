@@ -7,14 +7,17 @@ import ScoreBadge from "@/components/ScoreBadge";
 import { RATING_META } from "@/lib/constants";
 import { timeAgo } from "@/lib/format";
 import type { FeedVideo } from "@/lib/data";
+import ReportControl from "@/components/ReportControl";
 
 // "About this video" — backstory, rating breakdown, tags, creator link.
 // Celebrating the maker is the whole point of this sheet.
 export default function DetailSheet({
   video,
+  signedIn,
   onClose,
 }: {
   video: FeedVideo;
+  signedIn: boolean;
   onClose: () => void;
 }) {
   return (
@@ -75,6 +78,10 @@ export default function DetailSheet({
             ))}
           </p>
         )}
+
+        <div className="border-t border-line pt-3">
+          <ReportControl targetType="video" targetId={video.id} signedIn={signedIn} />
+        </div>
       </div>
     </Sheet>
   );

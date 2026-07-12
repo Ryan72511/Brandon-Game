@@ -96,6 +96,29 @@ async function main() {
     });
   }
 
+  // Moderation + App Review accounts (see docs/APP_STORE.md).
+  users["moderator"] = await prisma.user.create({
+    data: {
+      username: "moderator",
+      displayName: "Reely Moderation",
+      avatarEmoji: "🛡️",
+      avatarColor: "#8ECAE6",
+      role: "admin",
+      passwordHash: hashPassword(DEMO_PASSWORD),
+      createdAt: daysAgo(90),
+    },
+  });
+  users["appreview"] = await prisma.user.create({
+    data: {
+      username: "appreview",
+      displayName: "App Review",
+      avatarEmoji: "🙂",
+      avatarColor: "#BDE0FE",
+      passwordHash: hashPassword(DEMO_PASSWORD),
+      createdAt: daysAgo(1),
+    },
+  });
+
   console.log("Series + videos…");
   const seriesRows = {};
   for (const s of SERIES) {

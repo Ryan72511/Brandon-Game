@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AVATAR_EMOJI } from "@/lib/constants";
 
@@ -135,6 +136,17 @@ export default function AuthForm() {
           {busy ? "One moment…" : mode === "signup" ? "Start watching" : "Sign in"}
         </button>
       </form>
+      <p className="mt-3 text-center text-[13px] text-ink-soft">
+        By continuing you agree to our{" "}
+        <Link href="/about/terms" className="underline">
+          terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/about/guidelines" className="underline">
+          community guidelines
+        </Link>
+        .
+      </p>
       <p className="mt-4 text-center text-[14px] text-ink-soft">
         Watching works without an account. Rating, saving and creating need one.
       </p>

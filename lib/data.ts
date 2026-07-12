@@ -31,7 +31,8 @@ export interface FeedVideo {
   myRating: string | null; // "burnt" | "popped" | "butter" | null
   savedInChannelIds: string[]; // current user's channels containing this video
   captionsVtt: string;
-  status: string; // "draft" | "published"
+  status: string; // "draft" | "pending" | "published" | "removed"
+  mature: boolean;
   // Why this video was recommended, when it came from the recommender.
   reason?: string;
   // Resume position for the current user (Continue Watching).
@@ -61,7 +62,7 @@ export async function getFeedVideos(
   opts: { reasons?: Map<string, string> } = {}
 ): Promise<FeedVideo[]> {
   if (videoIds.length === 0) return [];
-  const [videos, myRatings, mySaves, nextEpisodes, progress] = await Promise.all([
+  const [videos, myRatings, mySaves, nextEpisodes, progress, myBlocks] = await Promise.all([
     prisma.video.findMany({ where: { id: { in: videoIds } }, include: feedInclude }),
     currentUserId
       ? prisma.rating.findMany({
@@ -109,7 +110,14 @@ export async function getFeedVideos(
           select: { videoId: true, progressSec: true, completed: true },
         })
       : Promise.resolve([]),
+    currentUserId
+      ? prisma.block.findMany({
+          where: { blockerId: currentUserId },
+          select: { blockedId: true },
+        })
+      : Promise.resolve([]),
   ]);
+  const blockedIds = new Set(myBlocks.map((b) => b.blockedId));
 
   // The LATEST event per video decides: if they finished it last time,
   // there's nothing to resume — older half-watched events don't count.
@@ -131,11 +139,13 @@ export async function getFeedVideos(
 
   const byId = new Map(videos.map((v) => [v.id, v]));
   // Preserve the caller's ordering (recs/charts order matters). Drafts and
-  // scheduled videos are visible only to their creator.
+  // scheduled videos are visible only to their creator, and videos from
+  // creators this viewer blocked disappear entirely.
   return videoIds
     .map((id) => byId.get(id))
     .filter((v): v is FeedRow => Boolean(v))
     .filter((v) => isPublicVideo(v) || v.creatorId === currentUserId)
+    .filter((v) => !blockedIds.has(v.creatorId))
     .map((v) => ({
       id: v.id,
       title: v.title,
@@ -164,6 +174,7 @@ export async function getFeedVideos(
       savedInChannelIds: savesMap.get(v.id) ?? [],
       captionsVtt: v.captionsVtt,
       status: v.status,
+      mature: v.mature,
       reason: opts.reasons?.get(v.id),
       resumeAtSec: progressMap.get(v.id),
     }));

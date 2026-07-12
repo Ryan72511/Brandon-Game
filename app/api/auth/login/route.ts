@@ -14,6 +14,12 @@ export async function POST(req: Request) {
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return jsonError("Wrong username or password.", 401);
   }
+  if (user.suspended) {
+    return jsonError(
+      "This account is suspended for breaking the community guidelines. Contact support@reely.app.",
+      403
+    );
+  }
   await createSession(user.id);
   return NextResponse.json({ ok: true, username: user.username });
 }

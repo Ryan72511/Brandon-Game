@@ -81,9 +81,19 @@ export default async function StudioPage() {
           <h2 className="text-lg font-bold">Your videos</h2>
           {videos.map((v) => (
             <div key={v.id} className="relative">
-              {v.status === "draft" && (
-                <span className="absolute left-3 top-3 z-10 rounded-full bg-gold px-2 py-0.5 text-[12px] font-bold text-[#1c1917]">
-                  Draft
+              {v.status !== "published" && (
+                <span
+                  className={`absolute left-3 top-3 z-10 rounded-full px-2 py-0.5 text-[12px] font-bold ${
+                    v.status === "removed"
+                      ? "bg-accent text-white"
+                      : "bg-gold text-[#1c1917]"
+                  }`}
+                >
+                  {v.status === "draft"
+                    ? "Draft"
+                    : v.status === "pending"
+                      ? "In review"
+                      : "Removed"}
                 </span>
               )}
               <VideoCard

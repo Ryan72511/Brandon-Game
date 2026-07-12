@@ -169,6 +169,7 @@ await step("upload a video with backstory and series", async () => {
   await page.fill('input[placeholder="Give it a great name"]', "E2E Upload Test");
   await page.selectOption("select", "comedy");
   await page.fill("textarea", "Made by a robot, reviewed by humans.");
+  await page.locator('label:has-text("This is mine to share") input').check();
   await page.click('button:has-text("Put it on Reely")');
   await page.waitForURL(/\/watch\/.+/, { timeout: 30000 });
   await page.waitForSelector("text=E2E Upload Test");
@@ -333,6 +334,78 @@ await step("delete the video from the studio", async () => {
   await page.waitForTimeout(500);
   const left = await page.locator("text=E2E Upload Test v2").count();
   assert.equal(left, 0, "video still listed after delete");
+});
+
+await step("legal and support pages open", async () => {
+  for (const [path, text] of [
+    ["/about/guidelines", "Community guidelines"],
+    ["/about/terms", "Terms of use"],
+    ["/about/privacy", "Privacy policy"],
+    ["/about/copyright", "Copyright"],
+    ["/about/support", "Support"],
+  ]) {
+    await page.goto(BASE + path);
+    await page.waitForSelector(`text=${text}`);
+  }
+});
+
+await step("report a video from the detail sheet", async () => {
+  await page.goto(captionedWatchUrl);
+  await page.click("text=Tap for the full story");
+  await page.click('button:has-text("Report this video")');
+  await page.click('button:has-text("Spam or scam")');
+  await page.waitForSelector("text=Thanks — our moderators will take a look.");
+  await page.keyboard.press("Escape");
+});
+
+await step("blocking a creator hides their videos", async () => {
+  await page.goto(BASE + "/creator/whodunit_wanda");
+  await page.click('button:has-text("Block this creator")');
+  await page.waitForSelector("text=You've blocked this creator");
+  await page.goto(BASE + "/channel/whodunit-lane");
+  await page.waitForTimeout(600);
+  const visible = await page.locator("text=Gone Before Dessert").count();
+  assert.equal(visible, 0, "blocked creator's video still visible in channel");
+  await page.goto(BASE + "/search?q=locket");
+  await page.waitForTimeout(600);
+  const inSearch = await page.locator("text=Gone Before Dessert").count();
+  assert.equal(inSearch, 0, "blocked creator's video still in search");
+});
+
+await step("moderator removes the reported video", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 420, height: 880 } });
+  const modPage = await ctx.newPage();
+  await modPage.goto(BASE + "/login");
+  await modPage.click("text=Welcome back");
+  await modPage.fill('input[placeholder="like sunny_dan"]', "moderator");
+  await modPage.fill('input[type="password"]', "reely123");
+  await modPage.click('button:has-text("Sign in")');
+  await modPage.waitForURL(BASE + "/");
+  await modPage.goto(BASE + "/you");
+  await modPage.waitForSelector('a[href="/admin"]');
+  await modPage.goto(BASE + "/admin");
+  await modPage.waitForSelector("text=Spam or scam");
+  await modPage.click('button:has-text("Remove video")');
+  await modPage.click('button:has-text("Yes, remove video")');
+  await modPage.waitForTimeout(800);
+  await ctx.close();
+  // The removed video 404s for regular viewers.
+  await page.goto(captionedWatchUrl);
+  await page.waitForSelector("text=That one's not showing");
+});
+
+await step("delete account, then the login is gone", async () => {
+  await page.goto(BASE + "/you");
+  await page.click('button:has-text("Delete account")');
+  await page.fill(`input[placeholder="${username}"]`, username);
+  await page.click('button:has-text("Delete everything")');
+  await page.waitForURL(BASE + "/");
+  await page.goto(BASE + "/login");
+  await page.click("text=Welcome back");
+  await page.fill('input[placeholder="like sunny_dan"]', username);
+  await page.fill('input[type="password"]', "test1234");
+  await page.click('button:has-text("Sign in")');
+  await page.waitForSelector("text=Wrong username or password.");
 });
 
 await browser.close();

@@ -38,6 +38,7 @@ export default function VideoSlide({
   const [shareDone, setShareDone] = useState(false);
   const [ccOn, setCcOn] = useState(false);
   const [captionsUrl, setCaptionsUrl] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
   const resumedRef = useRef(false);
   const quartilesSent = useRef(new Set<number>());
 
@@ -112,8 +113,15 @@ export default function VideoSlide({
           <Avatar emoji={video.creator.avatarEmoji} color={video.creator.avatarColor} size={36} />
           <span className="font-bold">{video.creator.displayName}</span>
         </Link>
-        <span className="ml-auto rounded-full bg-white/15 px-3 py-1 text-[13px] font-semibold">
-          {CATEGORY_LABELS[video.category as Category] ?? video.category}
+        <span className="ml-auto flex items-center gap-1.5">
+          {video.mature && (
+            <span className="rounded-full bg-gold px-2 py-1 text-[12px] font-bold text-[#1c1917]">
+              Mature
+            </span>
+          )}
+          <span className="rounded-full bg-white/15 px-3 py-1 text-[13px] font-semibold">
+            {CATEGORY_LABELS[video.category as Category] ?? video.category}
+          </span>
         </span>
       </div>
 
@@ -150,6 +158,7 @@ export default function VideoSlide({
             maybeReportProgress(0, e.currentTarget.duration || duration, true);
             onEnded();
           }}
+          onError={() => setLoadFailed(true)}
         >
           {/* WebM first for browsers without H.264; sources fall through on
               load failure, so uploads (mp4-only) still resolve. */}
@@ -159,7 +168,23 @@ export default function VideoSlide({
           <source src={video.src} type={video.src.endsWith(".webm") ? "video/webm" : "video/mp4"} />
           {captionsUrl && <track kind="captions" src={captionsUrl} label="Captions" default />}
         </video>
-        {paused && (
+        {loadFailed && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/80 px-6 text-center">
+            <p className="font-bold">This video couldn&apos;t load</p>
+            <p className="text-[14px] text-white/70">Check your connection and try again.</p>
+            <button
+              onClick={() => {
+                setLoadFailed(false);
+                videoEl?.load();
+                videoEl?.play().catch(() => {});
+              }}
+              className="mt-1 min-h-12 rounded-full bg-white px-6 font-bold text-black"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+        {paused && !loadFailed && (
           <button
             onClick={togglePlay}
             aria-label="Play"

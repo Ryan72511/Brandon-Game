@@ -5,6 +5,7 @@ import { LIMITS } from "@/lib/ratelimit";
 import { saveUpload, saveUploadStream } from "@/lib/storage";
 import { invalidateCandidateCache } from "@/lib/recs";
 import { CATEGORIES, MAX_UPLOAD_BYTES, MAX_VIDEO_SECONDS } from "@/lib/constants";
+import { reviewModeEnabled } from "@/lib/visibility";
 
 // Creating-mode upload. The browser extracts duration + a poster frame
 // client-side (no server-side transcoding at MVP; see docs/ARCHITECTURE.md
@@ -33,8 +34,17 @@ export const POST = withUser(async (user, req) => {
     .filter(Boolean)
     .slice(0, 8);
 
-  // Drafts stay visible only to their creator until published.
-  const status = form.get("status") === "draft" ? "draft" : "published";
+  // Apple UGC requirement: creators must confirm they own or control the
+  // rights before anything is stored.
+  if (form.get("rightsConfirmed") !== "yes") {
+    return jsonError("Please confirm you own the rights to this video.", 400);
+  }
+  const mature = form.get("mature") === "yes";
+
+  // Drafts stay visible only to their creator until published. When review
+  // mode is on (App Store builds), publishing goes through moderation.
+  let status = form.get("status") === "draft" ? "draft" : "published";
+  if (status === "published" && reviewModeEnabled()) status = "pending";
   const captionsVtt = cleanString(form.get("captionsVtt"), 20000);
 
   const durationRaw = Number(form.get("durationSec"));
@@ -89,6 +99,8 @@ export const POST = withUser(async (user, req) => {
       episodeNumber,
       status,
       captionsVtt,
+      mature,
+      rightsConfirmedAt: new Date(),
     },
   });
 

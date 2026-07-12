@@ -27,6 +27,8 @@ export default function UploadForm() {
   const [seriesTitle, setSeriesTitle] = useState("");
   const [captionsVtt, setCaptionsVtt] = useState("");
   const [status, setStatus] = useState<"published" | "draft">("published");
+  const [mature, setMature] = useState(false);
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -105,6 +107,8 @@ export default function UploadForm() {
     if (seriesTitle.trim()) form.set("seriesTitle", seriesTitle.trim());
     form.set("captionsVtt", captionsVtt);
     form.set("status", status);
+    form.set("mature", mature ? "yes" : "no");
+    form.set("rightsConfirmed", rightsConfirmed ? "yes" : "no");
 
     const res = await fetch("/api/videos", { method: "POST", body: form });
     setBusy(false);
@@ -293,11 +297,56 @@ export default function UploadForm() {
         </div>
       </div>
 
+      <label className="flex items-start gap-3 rounded-xl border-2 border-line bg-surface p-4">
+        <input
+          type="checkbox"
+          checked={mature}
+          onChange={(e) => setMature(e.target.checked)}
+          className="mt-1 h-6 w-6 accent-[#1877f2]"
+        />
+        <span className="text-[15px]">
+          <span className="font-semibold">This video has mature themes</span>
+          <span className="block text-ink-soft">
+            Scary, intense, or grown-up material. It keeps kids&apos; and Surprise Me feeds
+            comfortable for everyone.
+          </span>
+        </span>
+      </label>
+
+      <label className="flex items-start gap-3 rounded-xl border-2 border-line bg-surface p-4">
+        <input
+          type="checkbox"
+          checked={rightsConfirmed}
+          onChange={(e) => setRightsConfirmed(e.target.checked)}
+          required
+          className="mt-1 h-6 w-6 accent-[#1877f2]"
+        />
+        <span className="text-[15px]">
+          <span className="font-semibold">This is mine to share</span>
+          <span className="block text-ink-soft">
+            I made this video or have permission for everything in it — including music,
+            people, and artwork — and I agree to the{" "}
+            <a href="/about/terms" className="underline" target="_blank">
+              creator terms
+            </a>
+            .
+          </span>
+        </span>
+      </label>
+
       {error && <p className="font-semibold text-accent">{error}</p>}
 
       <button
         type="submit"
-        disabled={!file || !title.trim() || !category || busy || probing || Boolean(durationError)}
+        disabled={
+          !file ||
+          !title.trim() ||
+          !category ||
+          !rightsConfirmed ||
+          busy ||
+          probing ||
+          Boolean(durationError)
+        }
         className="min-h-16 rounded-xl bg-accent text-xl font-bold text-white disabled:opacity-40"
       >
         {busy ? "Uploading…" : "Put it on Reely 🍿"}

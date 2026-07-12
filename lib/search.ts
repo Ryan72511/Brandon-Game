@@ -47,7 +47,20 @@ export function normalizeQuery(raw: string | null | undefined): string {
   return q.length >= SEARCH_MIN_LEN && q.length <= SEARCH_MAX_LEN ? q : "";
 }
 
-export async function searchAll(q: string): Promise<SearchResults> {
+export async function searchAll(q: string, viewerId?: string | null): Promise<SearchResults> {
+  // Results respect the viewer's blocks: blocked creators and their videos
+  // never appear.
+  const blockedIds = viewerId
+    ? (
+        await prisma.block.findMany({
+          where: { blockerId: viewerId },
+          select: { blockedId: true },
+        })
+      ).map((b) => b.blockedId)
+    : [];
+  const notBlocked =
+    blockedIds.length > 0 ? { creatorId: { notIn: blockedIds } } : {};
+  const notBlockedUser = blockedIds.length > 0 ? { id: { notIn: blockedIds } } : {};
   if (!q) return EMPTY_RESULTS;
 
   // SQLite's LIKE is case-insensitive for ASCII but Prisma doesn't guarantee
@@ -69,7 +82,7 @@ export async function searchAll(q: string): Promise<SearchResults> {
   const [videos, creators, channels] = await Promise.all([
     prisma.video.findMany({
       // AND keeps publicVideoWhere's own OR (publishAt) separate from ours.
-      where: { AND: [publicVideoWhere(), { OR: videoOr }] },
+      where: { AND: [publicVideoWhere(), notBlocked, { OR: videoOr }] },
       orderBy: [{ popcornScore: "desc" }, { createdAt: "desc" }],
       take: 12,
       select: {
@@ -85,7 +98,7 @@ export async function searchAll(q: string): Promise<SearchResults> {
       },
     }),
     prisma.user.findMany({
-      where: { OR: creatorOr },
+      where: { suspended: false, ...notBlockedUser, OR: creatorOr },
       orderBy: { createdAt: "asc" },
       take: 8,
       select: {
