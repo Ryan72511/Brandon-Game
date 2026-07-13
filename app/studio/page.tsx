@@ -122,7 +122,7 @@ export default async function StudioPage() {
             )}
           </div>
           <p className="mt-2 text-[14px] text-ink-soft">
-            🧈 {butter.toLocaleString()} · 🍿 {popped.toLocaleString()} · 🔥{" "}
+            🧈 {butter.toLocaleString()} · 🍿 {popped.toLocaleString()} · 🌽{" "}
             {burnt.toLocaleString()}
           </p>
         </section>

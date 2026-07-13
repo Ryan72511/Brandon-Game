@@ -504,7 +504,7 @@ await step("history and ratings pages show your activity", async () => {
   await p.goto(BASE + "/history");
   await p.waitForSelector("text=/Watched (today|yesterday|\\d+ days ago)/");
   await p.goto(BASE + "/ratings");
-  await p.waitForSelector("text=/Extra Butter|Popped|Burnt/");
+  await p.waitForSelector("text=/Extra Butter|Popped|Unpopped/");
   await ctx.close();
 });
 

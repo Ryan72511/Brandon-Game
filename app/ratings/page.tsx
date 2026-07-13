@@ -36,7 +36,7 @@ export default async function RatingsPage() {
   const sections = [
     { key: "butter", heading: "🧈 Extra Butter — loved these", videos: pick("butter") },
     { key: "popped", heading: "🍿 Popped — liked these", videos: pick("popped") },
-    { key: "burnt", heading: "🔥 Burnt — not for you", videos: pick("burnt") },
+    { key: "burnt", heading: "🌽 Unpopped — not for you", videos: pick("burnt") },
   ].filter((s) => s.videos.length > 0);
 
   return (

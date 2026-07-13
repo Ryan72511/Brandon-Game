@@ -108,15 +108,15 @@ export default async function StudioVideoPage({
         <div className="flex items-center justify-around rounded-xl border border-line bg-surface p-4 shadow-card">
           <div className="text-center">
             <p className="text-xl font-bold">{video.burntCount}</p>
-            <p className="text-[13px] text-ink-soft">Burnt</p>
+            <p className="text-[13px] text-ink-soft">🌽 Unpopped</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold">{video.poppedCount}</p>
-            <p className="text-[13px] text-ink-soft">Popped</p>
+            <p className="text-[13px] text-ink-soft">🍿 Popped</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold">{video.butterCount}</p>
-            <p className="text-[13px] text-ink-soft">Extra Butter</p>
+            <p className="text-[13px] text-ink-soft">🧈 Extra Butter</p>
           </div>
         </div>
         <div className="rounded-xl border border-line bg-surface p-4 shadow-card">

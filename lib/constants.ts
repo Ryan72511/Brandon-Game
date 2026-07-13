@@ -123,7 +123,9 @@ export const RATING_META: Record<
   RatingValue,
   { emoji: string; label: string; sub: string }
 > = {
-  burnt: { emoji: "🔥", label: "Burnt", sub: "Not for me" },
+  // Stored value stays "burnt" for back-compat; shown as "Unpopped" (raw corn
+  // = didn't pop = not good). No 🔥 — fire reads as a compliment.
+  burnt: { emoji: "🌽", label: "Unpopped", sub: "Not for me" },
   popped: { emoji: "🍿", label: "Popped", sub: "Liked it" },
   butter: { emoji: "🧈", label: "Extra Butter", sub: "Loved it!" },
 };
