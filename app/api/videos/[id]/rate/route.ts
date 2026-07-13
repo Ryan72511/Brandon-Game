@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { withUser, jsonError } from "@/lib/api";
 import { RATING_VALUES, type RatingValue } from "@/lib/constants";
 import { popcornScore } from "@/lib/score";
+import { canInteractWithVideo } from "@/lib/data";
 
 type Params = [{ params: Promise<{ id: string }> }];
 
@@ -13,10 +14,13 @@ async function applyRating(videoId: string, userId: string, value: RatingValue |
     if (value === null) {
       await tx.rating.deleteMany({ where: { userId, videoId } });
     } else {
+      // Keep the original createdAt on a re-rate — changing your vote isn't
+      // new weekly engagement, so it mustn't jump the rating into this week's
+      // chart window (which filters on createdAt).
       await tx.rating.upsert({
         where: { userId_videoId: { userId, videoId } },
         create: { userId, videoId, value },
-        update: { value, createdAt: new Date() },
+        update: { value },
       });
     }
     const grouped = await tx.rating.groupBy({
@@ -48,8 +52,9 @@ export const POST = withUser<Params>(async (user, req, { params }) => {
   const value = body.value as RatingValue;
   if (!RATING_VALUES.includes(value)) return jsonError("Unknown rating.", 400);
 
-  const video = await prisma.video.findUnique({ where: { id }, select: { id: true } });
-  if (!video) return jsonError("Video not found.", 404);
+  if (!(await canInteractWithVideo(id, user))) {
+    return jsonError("You can't rate this video.", 403);
+  }
 
   const { counts, score } = await applyRating(id, user.id, value);
   return NextResponse.json({ ok: true, myRating: value, counts, score });

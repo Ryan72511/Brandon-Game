@@ -12,6 +12,8 @@
     - NSPrivacyTracking = false. Gasp does NOT track (no ATT prompt, no ad
       SDKs, no cross-app/third-party linking). NSPrivacyTrackingDomains empty.
     - Collected data:
+        * Email address — collected at signup, LINKED to the account, NOT used
+          for tracking, purpose: App Functionality (account + password help).
         * User content (videos, comments) — LINKED to the account, NOT used for
           tracking, purpose: App Functionality.
         * Product interaction (watch history / usage) — LINKED, NOT tracking,
@@ -40,6 +42,21 @@
 
     <key>NSPrivacyCollectedDataTypes</key>
     <array>
+        <!-- Email address: collected at signup for the account + password help.
+             Linked to the user, not used for tracking. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeEmailAddress</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
         <!-- User-generated content: uploaded videos and comments. -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>

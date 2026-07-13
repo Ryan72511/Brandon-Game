@@ -12,7 +12,7 @@
   --color-line: #2a2a36;        /* Line — borders, dividers */
   --color-ink: #f5f4f7;         /* Foam — primary text */
   --color-ink-soft: #9b9aa7;    /* Dim — secondary text */
-  --color-ink-faint: #5e5d6b;   /* Faint — micro labels */
+  --color-ink-faint: #8a8996;   /* Faint — micro labels (AA on bg + surface) */
   --color-accent: #c043ff;      /* Orchid — brand primary, actions */
   --color-accent-soft: #241636; /* dark orchid tint — selected pills, wells */
   --color-flare: #ff5c38;       /* Flare — LIVE, streaks, trending (scarce) */
@@ -28,7 +28,7 @@
   --color-night-raised: #15151d;
   --color-night-ink: #f5f4f7;
   --color-night-ink-soft: #9b9aa7;
-  --color-night-meta: #5e5d6b;
+  --color-night-meta: #8a8996;
   --radius-card: 16px;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
@@ -60,17 +60,6 @@ body {
 .display {
   font-family: var(--font-display);
   letter-spacing: -0.015em;
-}
-
-/* The Afterglow gradient as text (wordmark accents, hot titles). */
-.afterglow-text {
-  background: var(--afterglow);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.afterglow-fill {
-  background: var(--afterglow);
 }
 
 ::selection {

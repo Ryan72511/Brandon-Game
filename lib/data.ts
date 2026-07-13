@@ -1,9 +1,63 @@
 // Query helpers that shape Prisma rows into the DTOs client components use.
 import { prisma } from "@/lib/db";
-import { scoreDisplay, type ScoreDisplay } from "@/lib/score";
+import { scoreDisplay, popcornScore, type ScoreDisplay } from "@/lib/score";
 import { parseTags } from "@/lib/format";
-import { isPublicVideo } from "@/lib/visibility";
+import { isPublicVideo, publicVideoWhere } from "@/lib/visibility";
 import { isAdult } from "@/lib/age";
+
+// Recompute a video's denormalized rating counters + Popcorn Score from the
+// source-of-truth Rating rows. The rate route does this transactionally on
+// each vote, but cascade deletes (e.g. deleting a user removes their ratings
+// on OTHER people's videos) bypass that path and would otherwise leave those
+// videos permanently over-counted. Call this for each affected video after
+// such a delete. Best-effort: a since-deleted video id is simply skipped.
+export async function recomputeVideoCounters(videoId: string): Promise<void> {
+  const grouped = await prisma.rating.groupBy({
+    by: ["value"],
+    where: { videoId },
+    _count: true,
+  });
+  const counts = { burnt: 0, popped: 0, butter: 0 };
+  for (const g of grouped) {
+    if (g.value in counts) counts[g.value as keyof typeof counts] = g._count;
+  }
+  await prisma.video
+    .update({
+      where: { id: videoId },
+      data: {
+        burntCount: counts.burnt,
+        poppedCount: counts.popped,
+        butterCount: counts.butter,
+        popcornScore: popcornScore(counts),
+      },
+    })
+    .catch(() => {});
+}
+
+// Whether `user` may interact with a video (rate / comment / record a view) —
+// the same rule as "can watch it": published, creator in good standing, and
+// mature-gated, with the owner always allowed on their own video. Prevents
+// seeding ratings/comments/views onto drafts, removed, or mature content by id.
+export async function canInteractWithVideo(
+  videoId: string,
+  user: { id: string; birthYear: number | null } | null
+): Promise<boolean> {
+  const v = await prisma.video.findUnique({
+    where: { id: videoId },
+    select: {
+      creatorId: true,
+      status: true,
+      publishAt: true,
+      mature: true,
+      creator: { select: { suspended: true } },
+    },
+  });
+  if (!v) return false;
+  if (user && user.id === v.creatorId) return true;
+  if (!isPublicVideo(v) || v.creator.suspended) return false;
+  if (v.mature && !isAdult(user?.birthYear)) return false;
+  return true;
+}
 
 export interface FeedVideo {
   id: string;
@@ -99,8 +153,16 @@ export async function getFeedVideos(
       });
       if (withSeries.length === 0) return new Map<string, string | null>();
       const seriesIds = [...new Set(withSeries.map((v) => v.seriesId!))];
+      // Next-episode must obey full visibility, not just status: a scheduled,
+      // suspended-creator, or (for non-adults) mature next episode must not
+      // produce a "Next ▶" button that dead-ends on the guarded watch page.
+      // Same-series ⇒ same creator, so block-filtering is already covered.
       const episodes = await prisma.video.findMany({
-        where: { seriesId: { in: seriesIds }, status: "published" },
+        where: {
+          seriesId: { in: seriesIds },
+          ...publicVideoWhere(),
+          ...(canSeeMature ? {} : { mature: false }),
+        },
         orderBy: { episodeNumber: "asc" },
         select: { id: true, seriesId: true, episodeNumber: true },
       });

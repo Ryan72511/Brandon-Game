@@ -19,6 +19,9 @@ export default async function StudioPage() {
       where: { creatorId: user.id },
       orderBy: { createdAt: "desc" },
       select: { id: true },
+      // The stat tiles use an aggregate; the list itself is capped so a
+      // prolific creator doesn't re-serialize their whole catalog each visit.
+      take: 60,
     }),
     // One aggregate over all their videos — no per-video looping.
     prisma.video.aggregate({

@@ -184,13 +184,20 @@ export default function VideoSlide({
             </button>
           </div>
         )}
-        {paused && !loadFailed && (
+        {!loadFailed && (
+          // Always in the DOM (and tab order) so keyboard users can pause a
+          // playing video — invisible while playing, but revealed on focus or
+          // hover so the immersive look is kept for everyone else.
           <button
             onClick={togglePlay}
-            aria-label="Play"
-            className="absolute inset-0 m-auto flex h-20 w-20 items-center justify-center rounded-full bg-black/55 text-4xl"
+            aria-label={paused ? "Play" : "Pause"}
+            className={`absolute inset-0 m-auto flex h-20 w-20 items-center justify-center rounded-full text-4xl transition-opacity ${
+              paused
+                ? "bg-black/55 opacity-100"
+                : "bg-black/50 opacity-0 hover:opacity-100 focus-visible:opacity-100"
+            }`}
           >
-            ▶
+            {paused ? "▶" : "⏸"}
           </button>
         )}
         <button

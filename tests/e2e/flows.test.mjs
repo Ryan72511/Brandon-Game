@@ -204,6 +204,50 @@ await step("uploaded video plays back from /media", async () => {
   });
 });
 
+await step("upload media + interactions are gated by visibility", async () => {
+  // The page is on the freshly-uploaded (published) video's watch URL.
+  const vidId = page.url().split("/watch/")[1].split(/[?#]/)[0];
+  // The uploaded video is the first slide; later slides are seed recommendations.
+  const mediaSrc = await page.locator("video").first().locator("source").last().getAttribute("src");
+  assert.ok(mediaSrc.startsWith("/media/uploads/"), `expected an upload URL, got ${mediaSrc}`);
+
+  const anon = await browser.newContext();
+  // Published: bytes are public, and served with the nosniff header.
+  const pub = await anon.request.get(BASE + mediaSrc);
+  assert.equal(pub.status(), 200, "published upload media should be public");
+  assert.equal(pub.headers()["x-content-type-options"], "nosniff", "media must send nosniff");
+
+  // Flip it to draft (owner) — now it's non-public.
+  const toDraft = await page.request.patch(`${BASE}/api/videos/${vidId}`, {
+    data: { status: "draft" },
+  });
+  assert.equal(toDraft.ok(), true, "owner can set draft");
+
+  // A stranger can no longer fetch the bytes...
+  assert.equal((await anon.request.get(BASE + mediaSrc)).status(), 404, "draft media 404s for strangers");
+  // ...but the owner still can.
+  assert.equal((await page.request.get(BASE + mediaSrc)).status(), 200, "owner still sees own draft media");
+
+  // A different signed-in user can't rate a video they can't watch.
+  const other = await browser.newContext();
+  const op = await other.newPage();
+  await op.goto(BASE + "/login");
+  await op.click("text=Welcome back");
+  await op.fill('input[placeholder="like sunny_dan"]', "movie_mike");
+  await op.fill('input[type="password"]', "gasp123");
+  await op.click('button:has-text("Sign in")');
+  await op.waitForURL(BASE + "/");
+  const rate = await op.request.post(`${BASE}/api/videos/${vidId}/rate`, {
+    data: { value: "popped" },
+  });
+  assert.equal(rate.status(), 403, "can't rate a non-public video");
+
+  // Restore published so the later studio steps behave as before.
+  await page.request.patch(`${BASE}/api/videos/${vidId}`, { data: { status: "published" } });
+  await anon.close();
+  await other.close();
+});
+
 await step("studio lists the uploaded video", async () => {
   await page.goto(BASE + "/studio");
   await page.waitForSelector("text=E2E Upload Test");

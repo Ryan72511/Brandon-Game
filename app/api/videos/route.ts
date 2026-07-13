@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withUser, jsonError, cleanString } from "@/lib/api";
 import { LIMITS } from "@/lib/ratelimit";
-import { saveUpload, saveUploadStream } from "@/lib/storage";
+import { saveUpload, saveUploadStream, removeUpload } from "@/lib/storage";
 import { invalidateCandidateCache } from "@/lib/recs";
 import { CATEGORIES, MAX_UPLOAD_BYTES, MAX_VIDEO_SECONDS } from "@/lib/constants";
 import { reviewModeEnabled } from "@/lib/visibility";
@@ -11,6 +11,14 @@ import { reviewModeEnabled } from "@/lib/visibility";
 // client-side (no server-side transcoding at MVP; see docs/ARCHITECTURE.md
 // for the Mux/HLS production pipeline this slots into).
 export const POST = withUser(async (user, req) => {
+  // Reject obviously-oversized bodies from the Content-Length header before
+  // formData() buffers the whole thing into memory. (+10 MB slack covers the
+  // poster image and text fields alongside the ≤200 MB video.)
+  const declaredSize = Number(req.headers.get("content-length") || 0);
+  if (declaredSize > MAX_UPLOAD_BYTES + 10 * 1024 * 1024) {
+    return jsonError("Videos can be up to 200 MB.", 413);
+  }
+
   const form = await req.formData().catch(() => null);
   if (!form) return jsonError("Upload didn't come through. Try again.", 400);
 
@@ -62,48 +70,56 @@ export const POST = withUser(async (user, req) => {
     thumb = saved.url;
   }
 
-  // Optional mini-series attachment: reuse the creator's series by title,
-  // or create it. Episode number defaults to next-in-series.
-  const seriesTitle = cleanString(form.get("seriesTitle"), 80);
-  let seriesId: string | null = null;
-  let episodeNumber: number | null = null;
-  if (seriesTitle) {
-    const series =
-      (await prisma.series.findFirst({
-        where: { creatorId: user.id, title: seriesTitle },
-      })) ??
-      (await prisma.series.create({
-        data: { creatorId: user.id, title: seriesTitle },
-      }));
-    seriesId = series.id;
-    const last = await prisma.video.findFirst({
-      where: { seriesId },
-      orderBy: { episodeNumber: "desc" },
-      select: { episodeNumber: true },
+  // The files are on disk now; if any DB step below fails, unlink them so a
+  // failed upload can't orphan bytes that no row will ever point at.
+  try {
+    // Optional mini-series attachment: reuse the creator's series by title,
+    // or create it. Episode number defaults to next-in-series.
+    const seriesTitle = cleanString(form.get("seriesTitle"), 80);
+    let seriesId: string | null = null;
+    let episodeNumber: number | null = null;
+    if (seriesTitle) {
+      const series =
+        (await prisma.series.findFirst({
+          where: { creatorId: user.id, title: seriesTitle },
+        })) ??
+        (await prisma.series.create({
+          data: { creatorId: user.id, title: seriesTitle },
+        }));
+      seriesId = series.id;
+      const last = await prisma.video.findFirst({
+        where: { seriesId },
+        orderBy: { episodeNumber: "desc" },
+        select: { episodeNumber: true },
+      });
+      episodeNumber = (last?.episodeNumber ?? 0) + 1;
+    }
+
+    const video = await prisma.video.create({
+      data: {
+        creatorId: user.id,
+        title,
+        description,
+        backstory,
+        src,
+        thumb,
+        durationSec,
+        category,
+        tags: JSON.stringify(tags),
+        seriesId,
+        episodeNumber,
+        status,
+        captionsVtt,
+        mature,
+        rightsConfirmedAt: new Date(),
+      },
     });
-    episodeNumber = (last?.episodeNumber ?? 0) + 1;
+
+    invalidateCandidateCache();
+    return NextResponse.json({ ok: true, videoId: video.id });
+  } catch (err) {
+    await removeUpload(src);
+    await removeUpload(thumb);
+    throw err;
   }
-
-  const video = await prisma.video.create({
-    data: {
-      creatorId: user.id,
-      title,
-      description,
-      backstory,
-      src,
-      thumb,
-      durationSec,
-      category,
-      tags: JSON.stringify(tags),
-      seriesId,
-      episodeNumber,
-      status,
-      captionsVtt,
-      mature,
-      rightsConfirmedAt: new Date(),
-    },
-  });
-
-  invalidateCandidateCache();
-  return NextResponse.json({ ok: true, videoId: video.id });
 }, LIMITS.upload);

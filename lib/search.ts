@@ -118,7 +118,15 @@ export async function searchAll(q: string, viewerId?: string | null): Promise<Se
       },
     }),
     prisma.channel.findMany({
-      where: { OR: channelOr },
+      // Hide channels owned by a suspended creator (prebuilt channels have no
+      // owner and always stay). The video count reflects only visible videos,
+      // so a channel padded with removed/draft/mature videos doesn't overstate.
+      where: {
+        AND: [
+          { OR: channelOr },
+          { OR: [{ ownerId: null }, { owner: { suspended: false } }] },
+        ],
+      },
       orderBy: { createdAt: "asc" },
       take: 8,
       select: {
@@ -128,7 +136,7 @@ export async function searchAll(q: string, viewerId?: string | null): Promise<Se
         category: true,
         customCategory: true,
         coverUrl: true,
-        _count: { select: { videos: true } },
+        _count: { select: { videos: { where: { video: publicVideoWhere() } } } },
       },
     }),
   ]);

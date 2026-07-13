@@ -8,7 +8,12 @@ import {
   rateLimitByAccount,
   recordAccountFailure,
 } from "@/lib/api";
-import { verifyRecoveryCode, generateRecoveryCode, hashRecoveryCode } from "@/lib/recovery";
+import {
+  verifyRecoveryCode,
+  generateRecoveryCode,
+  hashRecoveryCode,
+  dummyVerifyRecovery,
+} from "@/lib/recovery";
 
 // Reset a forgotten password with the recovery code shown at signup. No
 // email needed. On success a fresh recovery code is issued (the old one is
@@ -31,7 +36,12 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({ where: { username } });
   // Same generic message whether the user or the code is wrong — no oracle.
-  if (!user || !user.recoveryCodeHash || !verifyRecoveryCode(recoveryCode, user.recoveryCodeHash)) {
+  // Missing account still pays the scrypt cost (dummy verify) so timing matches.
+  const storedCode = user?.recoveryCodeHash || "";
+  const codeOk = storedCode
+    ? verifyRecoveryCode(recoveryCode, storedCode)
+    : (dummyVerifyRecovery(recoveryCode), false);
+  if (!user || !codeOk) {
     // Verify FIRST, throttle only on failure: a correct recovery code is never
     // rate-limited, so an attacker can't lock the real owner out by flooding
     // their username with wrong codes. Wrong tries still burn the account's

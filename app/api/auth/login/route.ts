@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { createSession, verifyPassword } from "@/lib/session";
+import { createSession, verifyPassword, dummyVerify } from "@/lib/session";
 import {
   jsonError,
   cleanString,
@@ -23,7 +23,10 @@ export async function POST(req: Request) {
   // guesses still burn the account's budget, so brute-force stays throttled.
   // (The per-IP ceiling above caps total verify volume, bounding scrypt cost.)
   const user = await prisma.user.findUnique({ where: { username } });
-  if (!user || !verifyPassword(password, user.passwordHash)) {
+  // Run a throwaway scrypt when the user is missing so a nonexistent username
+  // costs the same as a wrong password — no timing oracle for enumeration.
+  const ok = user ? verifyPassword(password, user.passwordHash) : (dummyVerify(password), false);
+  if (!user || !ok) {
     const acctLimited = rateLimitByAccount(username);
     if (acctLimited) return acctLimited;
     recordAccountFailure(username);

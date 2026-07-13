@@ -102,6 +102,8 @@ export default function TabBar({
   return (
     <nav
       aria-label="Main"
+      // Pad for the iOS home indicator so the bar never sits under it.
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur"
     >
       <div className="mx-auto flex h-16 w-full max-w-lg items-stretch">

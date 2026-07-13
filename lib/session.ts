@@ -18,12 +18,23 @@ export function verifyPassword(password: string, stored: string): boolean {
   return candidate.length === expected.length && timingSafeEqual(candidate, expected);
 }
 
+// A real (but useless) scrypt hash. Login/reset run a verify against this when
+// the username doesn't exist, so a missing account costs the same CPU as a
+// wrong password — no timing oracle for username/email enumeration.
+const DUMMY_PASSWORD_HASH = hashPassword("gasp-nonexistent-account-sentinel");
+export function dummyVerify(password: string): void {
+  verifyPassword(password, DUMMY_PASSWORD_HASH);
+}
+
 export async function createSession(userId: string): Promise<void> {
   const token = randomBytes(32).toString("hex");
   await prisma.session.create({ data: { token, userId } });
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
+    // Secure in production so the year-long bearer token never rides plaintext
+    // HTTP; left off in dev so the local http://localhost flow still works.
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
@@ -61,7 +72,12 @@ export const getCurrentUser = cache(async () => {
     await prisma.session.deleteMany({ where: { userId: session.userId } }).catch(() => {});
     return null;
   }
-  return session.user;
+  // Never hand back the password/recovery hashes — defense in depth so a
+  // careless `<Client user={user}/>` can't serialize secrets to the browser.
+  const { passwordHash: _p, recoveryCodeHash: _r, ...safe } = session.user;
+  void _p;
+  void _r;
+  return safe;
 });
 
 export async function requireUser() {

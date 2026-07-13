@@ -4,7 +4,7 @@
 // the /media route change; every stored URL keeps working because callers
 // only ever see the returned `url`.
 import { createWriteStream } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, unlink } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import path from "node:path";
@@ -47,6 +47,15 @@ export async function saveUploadStream(
     createWriteStream(path.join(dir, name))
   );
   return { url: `/media/${kind}/${name}` };
+}
+
+// Best-effort delete of an uploaded file by its public URL. Confined to the
+// uploads dir (never touches committed seed media) and swallows errors, so it
+// is safe to call for compensating cleanup after a failed create.
+export async function removeUpload(url: string): Promise<void> {
+  if (!url.startsWith("/media/uploads/")) return;
+  const file = path.join(MEDIA_ROOT, "uploads", path.basename(url));
+  await unlink(file).catch(() => {});
 }
 
 export const MIME_BY_EXT: Record<string, string> = {

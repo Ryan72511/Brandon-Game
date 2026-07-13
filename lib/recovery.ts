@@ -49,3 +49,10 @@ export function verifyRecoveryCode(code: string, stored: string): boolean {
   const expected = Buffer.from(hash, "hex");
   return candidate.length === expected.length && timingSafeEqual(candidate, expected);
 }
+
+// Run a throwaway scrypt for reset attempts on a missing account, so an
+// unknown username costs the same as a wrong code — no enumeration oracle.
+const DUMMY_RECOVERY_HASH = hashRecoveryCode("gasp-nonexistent-recovery-sentinel");
+export function dummyVerifyRecovery(code: string): void {
+  verifyRecoveryCode(code, DUMMY_RECOVERY_HASH);
+}

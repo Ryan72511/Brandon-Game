@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withUser } from "@/lib/api";
+import { canInteractWithVideo } from "@/lib/data";
 import { LIMITS } from "@/lib/ratelimit";
 
 type Params = [{ params: Promise<{ id: string }> }];
@@ -22,6 +23,7 @@ export const POST = withUser<Params>(async (user, req, { params }) => {
     select: { durationSec: true },
   });
   if (!video) return NextResponse.json({ ok: true });
+  if (!(await canInteractWithVideo(id, user))) return NextResponse.json({ ok: true });
   const clamped = Math.min(progressSec, video.durationSec);
 
   const dayStart = new Date();

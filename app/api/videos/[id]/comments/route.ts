@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { withUser, jsonError, cleanString } from "@/lib/api";
 import { getCurrentUser } from "@/lib/session";
 import { isPublicVideo } from "@/lib/visibility";
+import { canInteractWithVideo } from "@/lib/data";
 
 type Params = [{ params: Promise<{ id: string }> }];
 
@@ -74,6 +75,10 @@ export const POST = withUser<Params>(async (user, req, { params }) => {
     select: { durationSec: true },
   });
   if (!video) return jsonError("Video not found.", 404);
+  // Can't comment on a video you couldn't watch (draft/removed/mature/suspended).
+  if (!(await canInteractWithVideo(id, user))) {
+    return jsonError("You can't comment on this video.", 403);
+  }
 
   let timecodeSec: number | null = null;
   if (typeof body.timecodeSec === "number" && Number.isFinite(body.timecodeSec)) {

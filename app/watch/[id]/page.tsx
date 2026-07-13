@@ -77,6 +77,9 @@ export default async function WatchPage({
                 where: { channelId: channel.id, video: publicVideoWhere() },
                 orderBy: { addedAt: "desc" },
                 select: { videoId: true },
+                // Cap the swipe chain — a huge channel must not mount hundreds
+                // of <video> nodes or serialize hundreds of rows at once.
+                take: 60,
               })
             ).map((v) => v.videoId);
       // Start at the shared video, keep the channel's order after it.
@@ -87,6 +90,7 @@ export default async function WatchPage({
       where: { seriesId: series },
       orderBy: { episodeNumber: "asc" },
       select: { id: true },
+      take: 100,
     });
     if (episodes.length > 0) {
       const seriesIds = episodes.map((e) => e.id);

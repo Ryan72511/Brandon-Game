@@ -61,8 +61,9 @@ with **Capacitor** (WKWebView). Wrapper-level work:
    allowed without Sign in with Apple. If you ever add Google/Facebook
    login, add Apple's at the same time.
 3. **PrivacyInfo.xcprivacy** (privacy manifest) declaring:
-   - Collected data: user content (videos, comments), identifiers (none
-     beyond username), usage data (watch history — linked, not tracking).
+   - Collected data: email address (collected at signup — linked, not
+     tracking, App Functionality), user content (videos, comments),
+     identifiers (username), usage data (watch history — linked, not tracking).
    - No tracking, no ad SDKs, no third-party analytics (true today —
      revisit if any SDK is added).
    - Required-reason APIs: only what Capacitor itself uses (UserDefaults —
@@ -138,9 +139,10 @@ with **Capacitor** (WKWebView). Wrapper-level work:
 >    removes the account, personal data, and uploaded videos).
 > 6. Browsing and watching work without an account. Sign-up asks a birth
 >    year (13+ required); mature-flagged content is hidden from under-18s.
-> 7. Forgotten passwords reset via a recovery code shown at sign-up (no
->    email is collected). Reviewer accounts use the fixed passwords below,
->    so no reset is needed to sign in.
+> 7. Sign-up collects an email address (account + password help; linked, not
+>    used for tracking). Forgotten passwords currently reset via a recovery
+>    code shown at sign-up — no email is sent yet. Reviewer accounts use the
+>    fixed passwords below, so no reset is needed to sign in.
 > 8. No purchases, subscriptions, ads, or tracking in this version.
 >
 > Reviewer accounts (non-expiring, no codes required):
