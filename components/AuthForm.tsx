@@ -197,8 +197,14 @@ export default function AuthForm() {
         </button>
         {mode === "login" && (
           <p className="text-center text-[14px]">
+            <Link href="/forgot" className="font-semibold text-accent underline">
+              Forgot password?
+            </Link>{" "}
+            <span aria-hidden className="text-ink-soft">
+              ·
+            </span>{" "}
             <Link href="/reset" className="font-semibold text-accent underline">
-              Forgot your password?
+              Use a recovery code
             </Link>
           </p>
         )}

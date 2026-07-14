@@ -27,9 +27,45 @@ export const LIMITS = {
   telemetry: { perMinute: 240, burst: 120 },
 } as const;
 
+// Derive the client IP from a hop we actually trust. X-Forwarded-For is
+// attacker-appendable from the left — trusting the left-most entry lets a
+// client mint a fresh IP per request and walk straight past the per-IP
+// limiter. Configure ONE of these in production:
+//
+//   TRUSTED_CLIENT_IP_HEADER — the name of your platform's real-IP header
+//     (e.g. "cf-connecting-ip", "fly-client-ip", "x-real-ip"). When set, that
+//     header is authoritative and X-Forwarded-For is ignored entirely.
+//   TRUSTED_PROXY_HOPS — how many proxies you control append to XFF. We take
+//     the Nth entry from the right (default 1 = right-most), which is the
+//     value written by your own edge, not by the client.
+//
+// With neither set (local dev, no proxy) we fall back to the left-most XFF
+// entry — fine on localhost, unsafe behind a real proxy.
 export function clientIp(req: Request): string {
+  const trustedHeader = process.env.TRUSTED_CLIENT_IP_HEADER;
+  if (trustedHeader) {
+    const value = req.headers.get(trustedHeader);
+    // Platform headers hold a single address; split defensively anyway.
+    return value ? value.split(",")[0].trim() || "local" : "local";
+  }
   const fwd = req.headers.get("x-forwarded-for");
-  return fwd ? fwd.split(",")[0].trim() : "local";
+  if (!fwd) return "local";
+  const entries = fwd
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (entries.length === 0) return "local";
+  const hopsRaw = process.env.TRUSTED_PROXY_HOPS;
+  if (hopsRaw) {
+    const parsed = Number.parseInt(hopsRaw, 10);
+    const hops = Number.isInteger(parsed) && parsed >= 1 ? parsed : 1;
+    // N trusted hops → the Nth-from-right entry is the connecting client as
+    // seen by the outermost proxy we control. Clamp so a short (spoof-only)
+    // list can't index past the left edge.
+    return entries[Math.max(0, entries.length - hops)];
+  }
+  // Dev fallback only — trusts the client-controlled left-most entry.
+  return entries[0];
 }
 
 function getBucket(key: string, capacity: number, now: number): Bucket {

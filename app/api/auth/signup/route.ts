@@ -5,7 +5,8 @@ import { jsonError, cleanString, rateLimitByIp } from "@/lib/api";
 import { AVATAR_COLORS, AVATAR_EMOJI } from "@/lib/constants";
 import { generateRecoveryCode, hashRecoveryCode } from "@/lib/recovery";
 import { MIN_SIGNUP_AGE, ageFromBirthYear, validBirthYear } from "@/lib/age";
-import { normalizeEmail } from "@/lib/email";
+import { normalizeEmail, sendEmail, verificationEmail } from "@/lib/email";
+import { generateToken, hashToken, expiry, VERIFY_TOKEN_TTL_MS } from "@/lib/tokens";
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
@@ -40,15 +41,15 @@ export async function POST(req: Request) {
     );
   }
 
+  // One generic message for BOTH collision kinds — saying which field
+  // collided would let anyone probe whether an email has an account here.
+  const TAKEN_MESSAGE = "That username or email is already taken. Try another, or sign in instead.";
   const existing = await prisma.user.findFirst({
     where: { OR: [{ username }, { email }] },
-    select: { username: true, email: true },
+    select: { id: true },
   });
-  if (existing?.username === username) {
-    return jsonError("That username is taken. Try another.", 409);
-  }
-  if (existing?.email === email) {
-    return jsonError("That email is already in use. Try signing in instead.", 409);
+  if (existing) {
+    return jsonError(TAKEN_MESSAGE, 409);
   }
 
   const recoveryCode = generateRecoveryCode();
@@ -71,14 +72,10 @@ export async function POST(req: Request) {
       },
     });
   } catch (err) {
-    // Unique-constraint race under concurrency: map back to a friendly message
-    // for whichever field collided (P2002 meta.target names the field(s)).
+    // Unique-constraint race under concurrency: same generic 409 as the
+    // pre-check — never reveal which field (username or email) collided.
     if ((err as { code?: string }).code === "P2002") {
-      const target = String((err as { meta?: { target?: unknown } }).meta?.target ?? "");
-      if (target.includes("email")) {
-        return jsonError("That email is already in use. Try signing in instead.", 409);
-      }
-      return jsonError("That username is taken. Try another.", 409);
+      return jsonError(TAKEN_MESSAGE, 409);
     }
     throw err;
   }
@@ -102,6 +99,21 @@ export async function POST(req: Request) {
         ownerId: user.id,
       },
     });
+  }
+  // Kick off email verification, best-effort: a mail hiccup (or missing
+  // provider key) must never block signup — the settings page can re-send.
+  try {
+    const verifyToken = generateToken();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerifyTokenHash: hashToken(verifyToken),
+        emailVerifyExpires: expiry(VERIFY_TOKEN_TTL_MS),
+      },
+    });
+    await sendEmail(verificationEmail(email, verifyToken));
+  } catch (err) {
+    console.error("signup: could not send verification email:", err);
   }
   await createSession(user.id);
   // The recovery code is returned exactly once, right after signup, so the

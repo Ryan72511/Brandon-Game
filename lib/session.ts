@@ -72,11 +72,19 @@ export const getCurrentUser = cache(async () => {
     await prisma.session.deleteMany({ where: { userId: session.userId } }).catch(() => {});
     return null;
   }
-  // Never hand back the password/recovery hashes — defense in depth so a
-  // careless `<Client user={user}/>` can't serialize secrets to the browser.
-  const { passwordHash: _p, recoveryCodeHash: _r, ...safe } = session.user;
+  // Never hand back the password/recovery/token hashes — defense in depth so
+  // a careless `<Client user={user}/>` can't serialize secrets to the browser.
+  const {
+    passwordHash: _p,
+    recoveryCodeHash: _r,
+    emailVerifyTokenHash: _v,
+    resetTokenHash: _t,
+    ...safe
+  } = session.user;
   void _p;
   void _r;
+  void _v;
+  void _t;
   return safe;
 });
 
