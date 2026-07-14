@@ -28,7 +28,7 @@ export default function VideoSlide({
   registerVideo: (index: number, el: HTMLVideoElement | null) => void;
   onOpenSheet: (kind: "rate" | "save" | "comments" | "detail") => void;
   onEnded: () => void;
-  onNextEpisode: (id: string) => void;
+  onNextEpisode: (id: string, seriesId?: string) => void;
   onProgress?: (videoId: string, progressSec: number, completed: boolean) => void;
 }) {
   const [muted, setMuted] = useState(true);
@@ -124,6 +124,23 @@ export default function VideoSlide({
           </span>
         </span>
       </div>
+
+      {/* Series chip — distinct from the creator name, tappable to follow +
+          watch the whole series. */}
+      {video.series && (
+        <div className="px-4 pb-2">
+          <Link
+            href={`/series/${video.series.id}`}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-[13px] font-semibold text-white hover:bg-white/20"
+          >
+            <span aria-hidden>📺</span>
+            <span className="line-clamp-1">{video.series.title}</span>
+            {video.episodeNumber != null && (
+              <span className="text-white/60">· Ep {video.episodeNumber}</span>
+            )}
+          </Link>
+        </div>
+      )}
 
       {/* Player */}
       <div className="relative w-full">
@@ -321,7 +338,8 @@ export default function VideoSlide({
       {video.nextEpisodeId && (
         <div className="px-4 pt-2">
           <button
-            onClick={() => onNextEpisode(video.nextEpisodeId!)}
+            // Into the series context (episodes in order), not deeper into the feed.
+            onClick={() => onNextEpisode(video.nextEpisodeId!, video.series?.id)}
             className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent font-bold text-white"
           >
             Next episode ▸

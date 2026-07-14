@@ -7,6 +7,7 @@ import { parseTags } from "@/lib/format";
 import { publicVideoWhere } from "@/lib/visibility";
 import BlockButton from "@/components/BlockButton";
 import ReportControl from "@/components/ReportControl";
+import FollowButton from "@/components/FollowButton";
 import PageHeader from "@/components/PageHeader";
 import Avatar from "@/components/Avatar";
 import VideoCard from "@/components/VideoCard";
@@ -68,13 +69,23 @@ export default async function CreatorPage({
         (v) => v.creator.username === creator.username
       )
     : undefined;
-  const blocked = viewer
-    ? Boolean(
-        await prisma.block.findUnique({
-          where: { blockerId_blockedId: { blockerId: viewer.id, blockedId: creator.id } },
-        })
-      )
-    : false;
+  const [blocked, followerCount, iFollow] = await Promise.all([
+    viewer
+      ? prisma.block
+          .findUnique({
+            where: { blockerId_blockedId: { blockerId: viewer.id, blockedId: creator.id } },
+          })
+          .then(Boolean)
+      : Promise.resolve(false),
+    prisma.creatorFollow.count({ where: { creatorId: creator.id } }),
+    viewer
+      ? prisma.creatorFollow
+          .findUnique({
+            where: { followerId_creatorId: { followerId: viewer.id, creatorId: creator.id } },
+          })
+          .then(Boolean)
+      : Promise.resolve(false),
+  ]);
 
   return (
     <div className="flex flex-col gap-6 pb-6">
@@ -86,6 +97,9 @@ export default async function CreatorPage({
           <div className="min-w-0">
             <h2 className="text-2xl font-bold">{creator.displayName}</h2>
             <p className="text-ink-soft">@{creator.username}</p>
+            <p className="mt-0.5 text-[14px] font-semibold text-ink-soft">
+              {followerCount} {followerCount === 1 ? "follower" : "followers"}
+            </p>
             {creator.bio && <p className="mt-1">{creator.bio}</p>}
           </div>
         </div>
@@ -98,13 +112,32 @@ export default async function CreatorPage({
           </Link>
         )}
         {!isSelf && (
-          <div className="flex flex-wrap items-center gap-2">
-            <BlockButton
-              username={creator.username}
-              blocked={blocked}
+          // Positive action leads: Follow is the big primary. The safety
+          // actions (block/report) are present but small and secondary.
+          <div className="flex flex-col gap-3">
+            <FollowButton
+              endpoint={`/api/creators/${creator.username}/follow`}
+              initialFollowing={iFollow}
               signedIn={Boolean(viewer)}
+              className="w-full"
             />
-            <ReportControl targetType="creator" targetId={creator.id} signedIn={Boolean(viewer)} />
+            <div className="flex items-center gap-4 pl-1">
+              <BlockButton
+                username={creator.username}
+                blocked={blocked}
+                signedIn={Boolean(viewer)}
+                compact
+              />
+              <span aria-hidden className="text-ink-faint">
+                ·
+              </span>
+              <ReportControl
+                targetType="creator"
+                targetId={creator.id}
+                signedIn={Boolean(viewer)}
+                compact
+              />
+            </div>
           </div>
         )}
         {blocked && (
@@ -171,14 +204,11 @@ export default async function CreatorPage({
           {creator.series
             .filter((s) => s._count.videos > 0)
             .map((s) => {
-              // Episode 1, not the newest upload — `videos` is recency-ordered.
-              const first = videos
-                .filter((v) => v.series?.id === s.id)
-                .sort((a, b) => (a.episodeNumber ?? 0) - (b.episodeNumber ?? 0))[0];
               return (
+                // The series detail page (follow + watch all episodes in order).
                 <Link
                   key={s.id}
-                  href={first ? `/watch/${first.id}?series=${s.id}` : "#"}
+                  href={`/series/${s.id}`}
                   className="flex min-h-16 items-center gap-3 rounded-xl border border-line bg-surface px-4 shadow-card"
                 >
                   <span className="text-2xl" aria-hidden>

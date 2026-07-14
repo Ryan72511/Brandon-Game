@@ -426,7 +426,8 @@ await step("report a video from the detail sheet", async () => {
 
 await step("blocking a creator hides their videos", async () => {
   await page.goto(BASE + "/creator/whodunit_wanda");
-  await page.click('button:has-text("Block this creator")');
+  // Block is now a compact secondary action ("Block") next to the primary Follow.
+  await page.click('button:has-text("Block")');
   await page.waitForSelector("text=You've blocked this creator");
   await page.goto(BASE + "/channel/whodunit-lane");
   await page.waitForTimeout(600);
@@ -668,6 +669,37 @@ await step("changing password logs out other sessions", async () => {
   assert.equal((await authed(rA)).status(), 401, "other session is logged out");
   await ctxA.close();
   await ctxB.close();
+});
+
+await step("creators + series discovery and following", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 420, height: 880 } });
+  const p = await ctx.newPage();
+  await p.goto(BASE + "/login");
+  await p.click("text=Welcome back");
+  await p.fill('input[placeholder="like sunny_dan"]', "demo");
+  await p.fill('input[type="password"]', "gasp123");
+  await p.click('button:has-text("Sign in")');
+  await p.waitForURL(BASE + "/");
+
+  // Creators tab: browse + search.
+  await p.goto(BASE + "/creators?q=dramatist");
+  await p.waitForSelector("text=The Dramatist");
+
+  // Follow a creator from their page (primary positive action).
+  await p.goto(BASE + "/creator/the_dramatist");
+  await p.click('button:has-text("Follow")');
+  await p.waitForSelector('button:has-text("Following")');
+
+  // Series discovery: browse → detail → follow → watch in series context.
+  await p.goto(BASE + "/series");
+  await p.locator('a[href^="/series/"]').first().click();
+  await p.waitForSelector("text=Watch this series");
+  await p.click('button:has-text("Follow")');
+  await p.waitForSelector('button:has-text("Following")');
+  await p.click("text=Watch this series");
+  await p.waitForURL(/\/watch\/.+[?&]series=/);
+  await p.waitForSelector("video");
+  await ctx.close();
 });
 
 await step("delete account, then the login is gone", async () => {

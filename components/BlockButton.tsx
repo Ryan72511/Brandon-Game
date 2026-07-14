@@ -8,10 +8,12 @@ export default function BlockButton({
   username,
   blocked: initialBlocked,
   signedIn,
+  compact = false,
 }: {
   username: string;
   blocked: boolean;
   signedIn: boolean;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [blocked, setBlocked] = useState(initialBlocked);
@@ -34,6 +36,21 @@ export default function BlockButton({
       setBlocked(!blocked);
       router.refresh();
     }
+  }
+
+  if (compact) {
+    return (
+      <button
+        onClick={toggle}
+        disabled={busy}
+        aria-pressed={blocked}
+        className={`min-h-8 text-[13px] font-bold underline disabled:opacity-40 ${
+          blocked ? "text-accent" : "text-ink-soft"
+        }`}
+      >
+        {blocked ? "Unblock" : "Block"}
+      </button>
+    );
   }
 
   return (

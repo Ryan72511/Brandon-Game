@@ -70,6 +70,34 @@ model User {
   reportsFiled   Report[] @relation("reportsFiled")
   blocksMade     Block[]  @relation("blocksMade")
   blocksReceived Block[]  @relation("blocksReceived")
+  creatorFollowing CreatorFollow[] @relation("creatorFollower")
+  creatorFollowers CreatorFollow[] @relation("creatorFollowed")
+  seriesFollows    SeriesFollow[]
+}
+
+// Following a creator (celebrate makers): follower → creator, a directed edge
+// distinct from channel follows.
+model CreatorFollow {
+  followerId String
+  follower   User     @relation("creatorFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  creatorId  String
+  creator    User     @relation("creatorFollowed", fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([followerId, creatorId])
+  @@index([creatorId])
+}
+
+// Following a mini-series so new episodes are easy to come back to.
+model SeriesFollow {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seriesId  String
+  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, seriesId])
+  @@index([seriesId])
 }
 
 model Session {
@@ -91,6 +119,7 @@ model Series {
   description String   @default("")
   createdAt   DateTime @default(now())
   videos      Video[]
+  followers   SeriesFollow[]
 
   @@index([creatorId])
 }

@@ -139,6 +139,12 @@ export const SCORE_PRIOR_WEIGHT_WEEKLY = 3;
 export const MIN_RATINGS_FOR_SCORE = 5;
 // Gold badge threshold, Rotten-Tomatoes style.
 export const FRESH_POP_THRESHOLD = 75;
+// Popcorn Score tiers so the emoji, word, and number always agree:
+//   >= BUTTER      → 🧈 "N% buttery"   (elite)
+//   >= UNPOPPED    → 🍿 "N% popped"    (most people popped it)
+//   <  UNPOPPED    → 🌽 "(100-N)% unpopped" (most people did NOT pop it)
+export const BUTTER_POP_THRESHOLD = 90;
+export const UNPOPPED_THRESHOLD = 50;
 
 export const MODE_WATCHING = "watching";
 export const MODE_CREATING = "creating";

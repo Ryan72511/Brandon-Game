@@ -25,6 +25,13 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
       <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
     </>
   ),
+  creators: (
+    <>
+      <circle cx="9" cy="8" r="3.1" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <path d="M15.5 6.6a3 3 0 0 1 0 5.8M16.2 19a5.6 5.6 0 0 0-2.7-4.7" />
+    </>
+  ),
   studio: (
     <>
       <path d="m4 8 16-4 1 4L5 12l-1-4ZM5 12h14v8H5v-8Z" />
@@ -56,6 +63,7 @@ function TabIcon({ name }: { name: string }) {
 const WATCHING_TABS = [
   { href: "/", label: "Watch", icon: "watch" },
   { href: "/channels", label: "Channels", icon: "channels" },
+  { href: "/creators", label: "Creators", icon: "creators" },
   { href: "/charts", label: "Charts", icon: "charts" },
   { href: "/you", label: "You", icon: "you" },
 ];

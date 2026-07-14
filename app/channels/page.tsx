@@ -113,6 +113,30 @@ export default async function ChannelsPage() {
           </Link>
         )}
 
+        {/* Discover: series + creators live alongside channels */}
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Link
+            href="/series"
+            className="flex min-h-16 items-center gap-3 rounded-2xl bg-white/[0.06] px-4 ring-1 ring-inset ring-white/10 transition hover:bg-white/[0.1]"
+          >
+            <span aria-hidden className="text-2xl">📺</span>
+            <span className="min-w-0">
+              <span className="block font-bold text-night-ink">Series</span>
+              <span className="block text-[13px] text-night-meta">Binge start to finish</span>
+            </span>
+          </Link>
+          <Link
+            href="/creators"
+            className="flex min-h-16 items-center gap-3 rounded-2xl bg-white/[0.06] px-4 ring-1 ring-inset ring-white/10 transition hover:bg-white/[0.1]"
+          >
+            <span aria-hidden className="text-2xl">✨</span>
+            <span className="min-w-0">
+              <span className="block font-bold text-night-ink">Creators</span>
+              <span className="block text-[13px] text-night-meta">Meet the makers</span>
+            </span>
+          </Link>
+        </div>
+
         {/* Your channels */}
         <SectionHeader eyebrow="Your lineup" title="Your channels" />
         <div className="grid grid-cols-2 gap-x-3 gap-y-5">

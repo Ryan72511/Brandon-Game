@@ -209,7 +209,13 @@ export default function WatchFeed({
     setSheet(null);
   }
 
-  function goToVideo(id: string) {
+  function goToVideo(id: string, seriesId?: string) {
+    // Next-episode: always jump into the series context (episodes in order),
+    // never just scroll deeper into the recommendation feed.
+    if (seriesId) {
+      router.push(`/watch/${id}?series=${seriesId}`);
+      return;
+    }
     const index = items.findIndex((v) => v.id === id);
     if (index >= 0) {
       slideEls.current.get(index)?.scrollIntoView({ behavior: "smooth", block: "start" });
