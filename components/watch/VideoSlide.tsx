@@ -17,10 +17,9 @@ export default function VideoSlide({
   registerSlide,
   registerVideo,
   onOpenSheet,
-  onPlayNext,
+  onPlayVideo,
   onNextEpisode,
   onProgress,
-  upNext,
 }: {
   video: FeedVideo;
   index: number;
@@ -28,16 +27,20 @@ export default function VideoSlide({
   registerSlide: (index: number, el: HTMLDivElement | null) => void;
   registerVideo: (index: number, el: HTMLVideoElement | null) => void;
   onOpenSheet: (kind: "rate" | "save" | "comments" | "detail") => void;
-  onPlayNext: () => void;
+  onPlayVideo: (id: string) => void;
   onNextEpisode: (id: string, seriesId?: string) => void;
   onProgress?: (videoId: string, progressSec: number, completed: boolean) => void;
-  upNext?: { title: string; thumb: string } | null;
 }) {
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
   // When a video finishes we STOP on it (YouTube-style end card) instead of
   // auto-scrolling to the next — the viewer chooses what happens next.
   const [ended, setEnded] = useState(false);
+  // On-video controls (mute/CC/play) auto-hide a couple seconds into playback
+  // so they don't cover the content, and come back on pause or keyboard focus.
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const [focusWithin, setFocusWithin] = useState(false);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
   const [shareDone, setShareDone] = useState(false);
@@ -88,6 +91,16 @@ export default function VideoSlide({
     }
   }
 
+  // Show the on-video controls, then fade them out again after a beat.
+  function revealChrome() {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    setChromeVisible(true);
+    hideTimer.current = setTimeout(() => setChromeVisible(false), 2800);
+  }
+  useEffect(() => () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+  }, []);
+
   async function share() {
     const url = `${window.location.origin}/watch/${video.id}`;
     try {
@@ -110,6 +123,13 @@ export default function VideoSlide({
 
   const saved = video.savedInChannelIds.length > 0;
   const duration = video.durationSec || 1;
+  // On-video controls are shown while paused, briefly after a tap, or whenever
+  // a control has keyboard focus — otherwise they fade away so they don't
+  // cover the video. The end card owns the screen when a video is finished.
+  const showControls = !ended && (paused || chromeVisible || focusWithin);
+  const chromeFade = `transition-opacity duration-300 ${
+    showControls ? "opacity-100" : "opacity-0 pointer-events-none"
+  }`;
 
   return (
     <div
@@ -156,7 +176,13 @@ export default function VideoSlide({
       )}
 
       {/* Player */}
-      <div className="relative w-full">
+      <div
+        className="relative w-full"
+        onFocus={() => setFocusWithin(true)}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) setFocusWithin(false);
+        }}
+      >
         <video
           ref={(el) => {
             registerVideo(index, el);
@@ -172,8 +198,13 @@ export default function VideoSlide({
           onPlay={() => {
             setPaused(false);
             setEnded(false);
+            revealChrome();
           }}
-          onPause={() => setPaused(true)}
+          onPause={() => {
+            setPaused(true);
+            if (hideTimer.current) clearTimeout(hideTimer.current);
+            setChromeVisible(true);
+          }}
           onLoadedMetadata={(e) => {
             // Continue watching: resume where they left off, once.
             const el = e.currentTarget;
@@ -220,9 +251,10 @@ export default function VideoSlide({
           </div>
         )}
         {ended && !loadFailed && (
-          // End card — we stay on the finished video and offer what's next
-          // instead of auto-scrolling away. Swiping still works underneath.
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/75 p-4 text-center">
+          // End card — eases in over the finished video and offers what's next
+          // (the next episode, or more from this creator). Swiping to other
+          // content still works underneath.
+          <div className="fade-in absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/75 p-4 text-center">
             <button
               onClick={replay}
               aria-label="Replay"
@@ -239,19 +271,23 @@ export default function VideoSlide({
                 Next episode ▸
               </button>
             ) : (
-              upNext && (
+              video.moreFromCreator && (
                 <button
-                  onClick={onPlayNext}
+                  onClick={() => onPlayVideo(video.moreFromCreator!.id)}
                   className="flex w-[86%] max-w-sm items-center gap-3 rounded-xl bg-white/10 p-2 pr-4 text-left hover:bg-white/20"
                 >
                   <span
                     aria-hidden
                     className="h-12 w-20 shrink-0 rounded-md bg-cover bg-center"
-                    style={{ backgroundImage: `url(${JSON.stringify(upNext.thumb)})` }}
+                    style={{ backgroundImage: `url(${JSON.stringify(video.moreFromCreator.thumb)})` }}
                   />
                   <span className="min-w-0">
-                    <span className="block text-[12px] font-semibold text-white/60">Up next</span>
-                    <span className="block truncate font-bold text-white">{upNext.title}</span>
+                    <span className="block text-[12px] font-semibold text-white/60">
+                      More from {video.creator.displayName}
+                    </span>
+                    <span className="block truncate font-bold text-white">
+                      {video.moreFromCreator.title}
+                    </span>
                   </span>
                 </button>
               )
@@ -260,17 +296,15 @@ export default function VideoSlide({
           </div>
         )}
         {!loadFailed && !ended && (
-          // Always in the DOM (and tab order) so keyboard users can pause a
-          // playing video — invisible while playing, but revealed on focus or
-          // hover so the immersive look is kept for everyone else.
+          // In the DOM (and tab order) whenever visible so keyboard users can
+          // pause; fades with the rest of the chrome so it doesn't sit over the
+          // video during playback.
           <button
             onClick={togglePlay}
             aria-label={paused ? "Play" : "Pause"}
-            className={`absolute inset-0 m-auto flex h-20 w-20 items-center justify-center rounded-full text-4xl transition-opacity ${
-              paused
-                ? "bg-black/55 opacity-100"
-                : "bg-black/50 opacity-0 hover:opacity-100 focus-visible:opacity-100"
-            }`}
+            className={`absolute inset-0 m-auto flex h-20 w-20 items-center justify-center rounded-full text-4xl ${
+              paused ? "bg-black/55" : "bg-black/40"
+            } ${chromeFade}`}
           >
             {paused ? "▶" : "⏸"}
           </button>
@@ -278,7 +312,7 @@ export default function VideoSlide({
         <button
           onClick={() => setMuted((m) => !m)}
           aria-label={muted ? "Turn sound on" : "Turn sound off"}
-          className="absolute right-3 top-3 flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-xl"
+          className={`absolute right-3 top-3 flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-xl ${chromeFade}`}
         >
           {muted ? "🔇" : "🔊"}
         </button>
@@ -289,7 +323,7 @@ export default function VideoSlide({
             aria-label={ccOn ? "Turn captions off" : "Turn captions on"}
             className={`absolute right-3 top-[68px] flex h-12 w-12 items-center justify-center rounded-full text-[13px] font-bold ${
               ccOn ? "bg-white text-black" : "bg-black/55 text-white"
-            }`}
+            } ${chromeFade}`}
           >
             CC
           </button>

@@ -83,6 +83,9 @@ export interface FeedVideo {
   series: { id: string; title: string } | null;
   episodeNumber: number | null;
   nextEpisodeId: string | null;
+  // Another public video by the same creator — the end card's "more from this
+  // creator" suggestion. Null when they have nothing else visible.
+  moreFromCreator: { id: string; title: string; thumb: string } | null;
   myRating: string | null; // "burnt" | "popped" | "butter" | null
   savedInChannelIds: string[]; // current user's channels containing this video
   captionsVtt: string;
@@ -196,6 +199,29 @@ export async function getFeedVideos(
   ]);
   const blockedIds = new Set(myBlocks.map((b) => b.blockedId));
 
+  // "More from this creator" for the end card: one batched, bounded query for
+  // recent public videos by everyone in this feed, then pick another of each
+  // creator's for their videos. Mature filtered to match the viewer.
+  const creatorIds = [...new Set(videos.map((v) => v.creatorId))];
+  const creatorPool = creatorIds.length
+    ? await prisma.video.findMany({
+        where: {
+          creatorId: { in: creatorIds },
+          ...publicVideoWhere(),
+          ...(canSeeMature ? {} : { mature: false }),
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, creatorId: true, title: true, thumb: true },
+        take: Math.min(500, creatorIds.length * 10 + 20),
+      })
+    : [];
+  const byCreator = new Map<string, { id: string; title: string; thumb: string }[]>();
+  for (const c of creatorPool) {
+    const list = byCreator.get(c.creatorId) ?? [];
+    list.push({ id: c.id, title: c.title, thumb: c.thumb });
+    byCreator.set(c.creatorId, list);
+  }
+
   // The LATEST event per video decides: if they finished it last time,
   // there's nothing to resume — older half-watched events don't count.
   const progressMap = new Map<string, number>();
@@ -257,6 +283,8 @@ export async function getFeedVideos(
       series: v.series,
       episodeNumber: v.episodeNumber,
       nextEpisodeId: nextEpisodes.get(v.id) ?? null,
+      moreFromCreator:
+        (byCreator.get(v.creatorId) ?? []).find((o) => o.id !== v.id) ?? null,
       myRating: ratingMap.get(v.id) ?? null,
       savedInChannelIds: savesMap.get(v.id) ?? [],
       captionsVtt: v.captionsVtt,

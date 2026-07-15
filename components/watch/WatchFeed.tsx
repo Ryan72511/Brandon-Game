@@ -224,13 +224,6 @@ export default function WatchFeed({
     }
   }
 
-  function advance(fromIndex: number) {
-    // Never yank the feed while someone is mid-rate/comment/save.
-    if (sheet) return;
-    if (fromIndex + 1 < items.length) {
-      slideEls.current.get(fromIndex + 1)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
 
   if (items.length === 0) {
     return (
@@ -258,12 +251,7 @@ export default function WatchFeed({
               if ((kind === "rate" || kind === "save") && requireSignIn()) return;
               setSheet({ kind, videoId: video.id });
             }}
-            onPlayNext={() => advance(index)}
-            upNext={
-              items[index + 1]
-                ? { title: items[index + 1].title, thumb: items[index + 1].thumb }
-                : null
-            }
+            onPlayVideo={(id) => router.push(`/watch/${id}`)}
             onNextEpisode={goToVideo}
             onProgress={
               signedIn

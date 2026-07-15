@@ -131,6 +131,15 @@ input[type="range"].scrubber::-moz-range-thumb {
   animation: pop-burst 350ms ease-out;
 }
 
+/* Gentle fade-in — the end card eases on rather than hard-cutting. */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-in {
+  animation: fade-in 450ms var(--ease-settle) both;
+}
+
 /* Sheet slide-up — settles on the drama curve. */
 @keyframes sheet-up {
   from { transform: translateY(24px); opacity: 0; }
