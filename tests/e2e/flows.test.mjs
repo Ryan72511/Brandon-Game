@@ -702,6 +702,26 @@ await step("creators + series discovery and following", async () => {
   await ctx.close();
 });
 
+await step("finished video shows an end card instead of auto-advancing", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 420, height: 880 } });
+  const pg = await ctx.newPage();
+  await pg.goto(BASE + "/");
+  await pg.waitForSelector("video");
+  // Jump the active video to just before its end so it finishes quickly.
+  await pg.evaluate(() => {
+    const v = document.querySelector("video");
+    if (v) {
+      v.muted = true;
+      v.currentTime = Math.max(0, (v.duration || 12) - 0.3);
+      v.play().catch(() => {});
+    }
+  });
+  // It must STOP on this video and offer what's next — not scroll away.
+  await pg.waitForSelector("text=That's the end");
+  await pg.waitForSelector("text=Swipe up for more");
+  await ctx.close();
+});
+
 await step("delete account, then the login is gone", async () => {
   await page.goto(BASE + "/you");
   await page.click('button:has-text("Delete account")');

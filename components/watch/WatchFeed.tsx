@@ -258,7 +258,12 @@ export default function WatchFeed({
               if ((kind === "rate" || kind === "save") && requireSignIn()) return;
               setSheet({ kind, videoId: video.id });
             }}
-            onEnded={() => advance(index)}
+            onPlayNext={() => advance(index)}
+            upNext={
+              items[index + 1]
+                ? { title: items[index + 1].title, thumb: items[index + 1].thumb }
+                : null
+            }
             onNextEpisode={goToVideo}
             onProgress={
               signedIn

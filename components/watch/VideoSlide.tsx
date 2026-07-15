@@ -17,9 +17,10 @@ export default function VideoSlide({
   registerSlide,
   registerVideo,
   onOpenSheet,
-  onEnded,
+  onPlayNext,
   onNextEpisode,
   onProgress,
+  upNext,
 }: {
   video: FeedVideo;
   index: number;
@@ -27,12 +28,16 @@ export default function VideoSlide({
   registerSlide: (index: number, el: HTMLDivElement | null) => void;
   registerVideo: (index: number, el: HTMLVideoElement | null) => void;
   onOpenSheet: (kind: "rate" | "save" | "comments" | "detail") => void;
-  onEnded: () => void;
+  onPlayNext: () => void;
   onNextEpisode: (id: string, seriesId?: string) => void;
   onProgress?: (videoId: string, progressSec: number, completed: boolean) => void;
+  upNext?: { title: string; thumb: string } | null;
 }) {
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
+  // When a video finishes we STOP on it (YouTube-style end card) instead of
+  // auto-scrolling to the next — the viewer chooses what happens next.
+  const [ended, setEnded] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
   const [shareDone, setShareDone] = useState(false);
@@ -73,6 +78,14 @@ export default function VideoSlide({
     if (!videoEl) return;
     if (videoEl.paused) videoEl.play().catch(() => {});
     else videoEl.pause();
+  }
+
+  function replay() {
+    setEnded(false);
+    if (videoEl) {
+      videoEl.currentTime = 0;
+      videoEl.play().catch(() => {});
+    }
   }
 
   async function share() {
@@ -156,7 +169,10 @@ export default function VideoSlide({
           crossOrigin="anonymous"
           preload={isActive ? "auto" : "metadata"}
           onClick={togglePlay}
-          onPlay={() => setPaused(false)}
+          onPlay={() => {
+            setPaused(false);
+            setEnded(false);
+          }}
           onPause={() => setPaused(true)}
           onLoadedMetadata={(e) => {
             // Continue watching: resume where they left off, once.
@@ -172,8 +188,10 @@ export default function VideoSlide({
             maybeReportProgress(el.currentTime, el.duration || duration, false);
           }}
           onEnded={(e) => {
+            // Record completion, then stop on this video and show the end card
+            // — no auto-advance. The viewer replays, taps next, or swipes.
             maybeReportProgress(0, e.currentTarget.duration || duration, true);
-            onEnded();
+            setEnded(true);
           }}
           onError={() => setLoadFailed(true)}
         >
@@ -201,7 +219,47 @@ export default function VideoSlide({
             </button>
           </div>
         )}
-        {!loadFailed && (
+        {ended && !loadFailed && (
+          // End card — we stay on the finished video and offer what's next
+          // instead of auto-scrolling away. Swiping still works underneath.
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/75 p-4 text-center">
+            <button
+              onClick={replay}
+              aria-label="Replay"
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-3xl text-white hover:bg-white/25"
+            >
+              ↺
+            </button>
+            <span className="text-[13px] font-semibold text-white/70">That&apos;s the end</span>
+            {video.nextEpisodeId ? (
+              <button
+                onClick={() => onNextEpisode(video.nextEpisodeId!, video.series?.id)}
+                className="min-h-11 rounded-full bg-accent px-6 font-bold text-white"
+              >
+                Next episode ▸
+              </button>
+            ) : (
+              upNext && (
+                <button
+                  onClick={onPlayNext}
+                  className="flex w-[86%] max-w-sm items-center gap-3 rounded-xl bg-white/10 p-2 pr-4 text-left hover:bg-white/20"
+                >
+                  <span
+                    aria-hidden
+                    className="h-12 w-20 shrink-0 rounded-md bg-cover bg-center"
+                    style={{ backgroundImage: `url(${JSON.stringify(upNext.thumb)})` }}
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-[12px] font-semibold text-white/60">Up next</span>
+                    <span className="block truncate font-bold text-white">{upNext.title}</span>
+                  </span>
+                </button>
+              )
+            )}
+            <span className="text-[12px] text-white/50">Swipe up for more ↑</span>
+          </div>
+        )}
+        {!loadFailed && !ended && (
           // Always in the DOM (and tab order) so keyboard users can pause a
           // playing video — invisible while playing, but revealed on focus or
           // hover so the immersive look is kept for everyone else.
